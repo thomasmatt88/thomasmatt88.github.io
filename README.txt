@@ -5,8 +5,6 @@ Right-click on index.html -> Open With Live Server
 
 
 
-
-
 -----------------------------------------------------------
 Miniport by HTML5 UP
 html5up.net | @ajlkn
