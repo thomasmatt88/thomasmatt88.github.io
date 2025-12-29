@@ -7,11 +7,12 @@ It is critical to dissociate *event timestamp* (when event occured or measuremme
 <h2>Problem Statement</h2>
 Assume we want to track the total number of alerts of our fleet over time -- ensure it is trending down and we are alerted to any spikes.
 
-![Figure 1](figure1.png)
+![Figure 1](figure1.svg)
 
 <h2>Data Pipeline</h2>
 
-**SOURCE_TABLE &rarr; ALERT_COUNTS_INCREMENTAL &rarr; ALERT_COUNTS_FINAL**
+<!-- https://www.reddit.com/r/vscode/comments/1ibntfy/svg_files_open_as_previews_i_want_them_to_open_as/ -->
+![Data Pipeline](pipeline1.svg)
 
 <table>
 <caption>SOURCE_TABLE</caption>
