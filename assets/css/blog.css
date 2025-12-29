@@ -1,0 +1,5 @@
+/* assets/css/blog.css
+    Ensure text inside <article> elements is left-aligned */
+article {
+    text-align: left;
+}
