@@ -25,6 +25,7 @@ Assume we want to track the total number of alerts of our fleet over time -- ens
   </thead>
   <tbody>
     <tr style="color: green;"><td>2000-01-01</td><td>2001-01-01</td><td>P0171</td><td>JA4AZ2A38JJ600754</td></tr>
+    <tr style="color: green;"><td>2000-01-01</td><td>2001-01-01</td><td>P0340</td><td>1FMCU9DG9CKA65334</td></tr>
     <tr style="color: orange;"><td>2000-01-01</td><td>2001-01-02</td><td>P0300</td><td>1GTS7D4Y9FV510290</td></tr>
     <tr style="color: orange;"><td>2000-01-02</td><td>2001-01-02</td><td>P0171</td><td>JA4AZ2A38JJ600754</td></tr>
     <tr style="color: blue;"><td>2000-01-03</td><td>2001-01-03</td><td>P0340</td><td>1FMCU9DG9CKA65334</td></tr>
@@ -44,3 +45,50 @@ WHERE received_date = @YESTERDAY
 GROUP BY received_date, event_date
 ```
 We filter on `received_date`, which is why it was critical to partition by `received_date` in SOURCE_TABLE.
+
+<table>
+<caption>ALERT_COUNTS_INCREMENTAL</caption>
+  <thead>
+    <tr>
+      <th>event_date</th>
+      <th>received_date</th>
+      <th>alerts_count</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="color: green;"><td>2000-01-01</td><td>2001-01-01</td><td>2</td></tr>
+    <tr style="color: orange;"><td>2000-01-01</td><td>2001-01-02</td><td>1</td></tr>
+    <tr style="color: orange;"><td>2000-01-02</td><td>2001-01-02</td><td>1</td></tr>
+    <tr style="color: blue;"><td>2000-01-03</td><td>2001-01-03</td><td>1</td></tr>
+  </tbody>
+</table>
+
+It is critical that the top level partition for the source table is `received_date`.
+
+Never append, always insert overwrite (Idempotence). When inserting incremental results into Incremental Table, insert overwrite the whole received_date partition each time. This will make sure that the pipeline can be re-run or backfilled without fear of inserting duplicates into the Incremental Table.
+
+ALERT_COUNTS_INCREMENTAL &rarr; ALERT_COUNTS_FINAL <br>
+
+Finally, query incremental table to recover final total number of alerts, for our dashboard. This step will process all the results/rows from the incremental table each time it is run, but this table is many orders of magnitude smaller than the source table.
+
+```sql
+INSERT INTO ALERT_COUNTS_FINAL
+SELECT event_date, SUM(alerts_count) AS total_alerts_count
+FROM ALERT_COUNTS_INCREMENTAL
+GROUP BY event_date
+```
+
+<table>
+<caption>ALERT_COUNTS_FINAL</caption>
+  <thead>
+    <tr>
+      <th>event_date</th>
+      <th>total_alerts_count</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>2000-01-01</td><td>3</td></tr>
+    <tr><td>2000-01-02</td><td>1</td></tr>
+    <tr><td>2000-01-03</td><td>1</td></tr>
+  </tbody>
+</table>
