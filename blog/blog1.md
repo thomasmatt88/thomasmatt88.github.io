@@ -11,20 +11,36 @@ Assume we want to track the total number of alerts of our fleet over time -- ens
 
 <h2>Data Pipeline</h2>
 
-SOURCE_TABLE -> ALERT_COUNTS_INCREMENTAL -> ALERT_COUNTS_FINAL
-
+**SOURCE_TABLE &rarr; ALERT_COUNTS_INCREMENTAL &rarr; ALERT_COUNTS_FINAL**
 
 <table>
+<caption>SOURCE_TABLE</caption>
   <thead>
     <tr>
-      <th>A</th>
-      <th>B</th>
-      <th>C</th>
+      <th>event_date</th>
+      <th>received_date</th>
+      <th>alert</th>
+      <th>VIN</th>
     </tr>
   </thead>
   <tbody>
-    <tr style="color: green;"><td>1</td><td>2000-03-31</td><td>2001-01-01</td></tr>
-    <tr style="color: orange;"><td>1</td><td>2000-03-31</td><td>2001-03-20</td></tr>
-    <tr style="color: blue;"><td>1</td><td>2000-03-31</td><td>2001-04-10</td></tr>
+    <tr style="color: green;"><td>2000-01-01</td><td>2001-01-01</td><td>P0171</td><td>JA4AZ2A38JJ600754</td></tr>
+    <tr style="color: orange;"><td>2000-01-01</td><td>2001-01-02</td><td>P0300</td><td>1GTS7D4Y9FV510290</td></tr>
+    <tr style="color: orange;"><td>2000-01-02</td><td>2001-01-02</td><td>P0171</td><td>JA4AZ2A38JJ600754</td></tr>
+    <tr style="color: blue;"><td>2000-01-03</td><td>2001-01-03</td><td>P0340</td><td>1FMCU9DG9CKA65334</td></tr>
   </tbody>
 </table>
+
+It is critical that the top level partition for the source table is `received_date`
+
+SOURCE_TABLE &rarr; ALERT_COUNTS_INCREMENTAL <br>
+Every day, extract data from SOURCE_TABLE for previous `received_date`, and compute counts of alert for each `event_date`. Said differently, on each day we will compute the incremental alert counts for each `event_date`.
+
+```sql
+INSERT INTO ALERT_COUNTS_INCREMENTAL
+SELECT received_date, event_date, COUNT(*) AS alerts_count
+FROM SOURCE_TABLE
+WHERE received_date = @YESTERDAY
+GROUP BY received_date, event_date
+```
+We filter on `received_date`, which is why it was critical to partition by `received_date` in SOURCE_TABLE.
