@@ -1,0 +1,30 @@
+name: Tag on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+jobs:
+  tag-on-merge:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Only proceed if the PR was merged
+      - name: Check if PR was merged
+        if: github.event.pull_request.merged == true
+        run: echo "PR was merged ✅"
+
+      # Create a lightweight tag (optionally read from input)
+      - name: Create lightweight tag
+        if: github.event.pull_request.merged == true
+        run: |
+          TAG_NAME="pr-${{ github.event.pull_request.number }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
