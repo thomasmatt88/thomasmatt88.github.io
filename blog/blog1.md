@@ -111,3 +111,12 @@ GROUP BY event_date
     <tr><td>2000-01-03</td><td>1</td></tr>
   </tbody>
 </table>
+<br>
+<br>
+
+<h2>Further Optimization</h2>
+The key optimization utilized in the data pipeline is to partition data on received/processing dates, rather than event date. There are further optimizations one can perform that are discussed in the parent blog and linked below. However, these optimizations are coupled to the particular data model and database technologies one will use in their pipeline. 
+<br>
+<br>
+
+https://maximebeauchemin.medium.com/functional-data-engineering-a-modern-paradigm-for-batch-data-processing-2327ec32c42a#:~:text=Late%20arriving%20facts.
