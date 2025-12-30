@@ -1,30 +1,50 @@
 name: Tag on PR Merge
 
 on:
+  # Trigger automatically on PR merge into master
   pull_request:
     types: [closed]
     branches:
       - master
 
+  # Manual trigger to specify custom tag
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Custom tag name (optional)'
+        required: false
+
 jobs:
-  tag-on-merge:
+  tag:
     runs-on: ubuntu-latest
     steps:
-      # Checkout the repository
-      - name: Checkout code
+      # Checkout the repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Only proceed if the PR was merged
-      - name: Check if PR was merged
-        if: github.event.pull_request.merged == true
-        run: echo "PR was merged ✅"
-
-      # Create a lightweight tag (optionally read from input)
-      - name: Create lightweight tag
-        if: github.event.pull_request.merged == true
+      # Configure Git for tagging
+      - name: Setup Git
         run: |
-          TAG_NAME="pr-${{ github.event.pull_request.number }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "$TAG_NAME"
-          git push origin "$TAG_NAME"
+
+      # Determine tag name
+      - name: Determine tag name
+        id: tagname
+        run: |
+          # If manually triggered with tag_name input, use it
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            echo "TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+          # If PR merged, generate tag automatically
+          elif [ "${{ github.event.pull_request.merged }}" == "true" ]; then
+            echo "TAG=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          else
+            echo "No tag to create, exiting"
+            exit 0
+          fi
+
+      # Create and push the tag
+      - name: Create and push tag
+        run: |
+          git tag "$TAG"
+          git push origin "$TAG"
