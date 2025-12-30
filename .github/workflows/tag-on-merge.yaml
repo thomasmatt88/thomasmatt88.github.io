@@ -26,5 +26,5 @@ jobs:
       - name: Create and push tag
         if: ${{ github.event.inputs.tag_name != '' }}
         run: |
-          git tag ${{ github.event.inputs.tag_name }}"
-          git push origin ${{ github.event.inputs.tag_name }}"
+          git tag ${{ github.event.inputs.tag_name }}
+          git push origin ${{ github.event.inputs.tag_name }}
