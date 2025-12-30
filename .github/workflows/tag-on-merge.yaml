@@ -1,4 +1,4 @@
-name: Tag on PR Merge
+name: Lightweight Git Tag
 
 on:
   # Manual trigger to specify custom tag
