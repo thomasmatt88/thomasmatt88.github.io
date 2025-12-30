@@ -1,12 +1,6 @@
 name: Tag on PR Merge
 
 on:
-  # Trigger automatically on PR merge into master
-  pull_request:
-    types: [closed]
-    branches:
-      - master
-
   # Manual trigger to specify custom tag
   workflow_dispatch:
     inputs:
@@ -28,32 +22,9 @@ jobs:
         if: ${{ github.event.inputs.tag_name != '' }}
         uses: actions/checkout@v3
 
-      # Configure Git for tagging
-      - name: Setup Git
-        if: ${{ github.event.inputs.tag_name != '' }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      # Determine tag name
-      - name: Determine tag name
-        if: ${{ github.event.inputs.tag_name != '' }}
-        id: tagname
-        run: |
-          # If manually triggered with tag_name input, use it
-          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
-            echo "TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
-          # If PR merged, generate tag automatically
-          elif [ "${{ github.event.pull_request.merged }}" == "true" ]; then
-            echo "TAG=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-          else
-            echo "No tag to create, exiting"
-            exit 0
-          fi
-
       # Create and push the tag
       - name: Create and push tag
         if: ${{ github.event.inputs.tag_name != '' }}
         run: |
-          git tag "$TAG"
-          git push origin "$TAG"
+          git tag ${{ github.event.inputs.tag_name }}"
+          git push origin ${{ github.event.inputs.tag_name }}"
