@@ -115,7 +115,7 @@ GROUP BY event_date
 <br>
 
 <h2>Further Optimization</h2>
-The key optimization utilized in the data pipeline is to partition data on received/processing dates, rather than event date. There are further optimizations one can perform that are discussed in the parent blog and linked below. However, these optimizations are coupled to the particular data model and database technologies one will use in their pipeline. 
+The key optimization utilized in the data pipeline is to partition data on received/processing dates, rather than event date. There are further optimizations one can perform that are discussed in the parent blog and linked below. However, these optimizations are marginal in comparison and coupled to the particular data model and database technologies one will use in their pipeline. 
 <br>
 <br>
 
