@@ -1,0 +1,60 @@
+<svg width="900" height="460" viewBox="0 0 900 460"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Axes -->
+  <line x1="80" y1="40" x2="80" y2="340"
+        stroke="#7bcf7b" stroke-width="4"/>
+  <line x1="80" y1="340" x2="860" y2="340"
+        stroke="#7bcf7b" stroke-width="4"/>
+
+  <!-- Axis arrows -->
+  <polygon points="80,25 72,45 88,45" fill="#7bcf7b"/>
+  <polygon points="875,340 855,332 855,348" fill="#7bcf7b"/>
+
+  <!-- Y-axis labels -->
+  <text x="35" y="335" font-size="14" fill="#7bcf7b">1M</text>
+  <text x="35" y="265" font-size="14" fill="#7bcf7b">2M</text>
+  <text x="35" y="195" font-size="14" fill="#7bcf7b">3M</text>
+  <text x="35" y="125" font-size="14" fill="#7bcf7b">4M</text>
+
+  <!-- Y-axis title (centered) -->
+  <text x="30" y="190"
+        transform="rotate(-90 30 190)"
+        font-size="16"
+        text-anchor="middle"
+        fill="#7bcf7b">
+    Total # of alerts
+  </text>
+
+  <!-- X-axis title -->
+  <text x="430" y="420" font-size="16" fill="#7bcf7b">
+    event_date
+  </text>
+
+  <!-- X-axis date labels (vertical, below axis) -->
+  <g font-size="12" fill="#7bcf7b" text-anchor="end">
+    <text x="120" y="360" transform="rotate(-90 120 360)">10/20/22</text>
+    <text x="200" y="360" transform="rotate(-90 200 360)">10/21/22</text>
+    <text x="280" y="360" transform="rotate(-90 280 360)">10/22/22</text>
+    <text x="360" y="360" transform="rotate(-90 360 360)">10/23/22</text>
+    <text x="440" y="360" transform="rotate(-90 440 360)">10/24/22</text>
+    <text x="520" y="360" transform="rotate(-90 520 360)">10/25/22</text>
+    <text x="600" y="360" transform="rotate(-90 600 360)">10/26/22</text>
+    <text x="680" y="360" transform="rotate(-90 680 360)">10/27/22</text>
+    <text x="760" y="360" transform="rotate(-90 760 360)">10/28/22</text>
+  </g>
+
+  <!-- Scatter points -->
+  <g fill="#7bcf7b">
+    <circle cx="120" cy="160" r="6"/>
+    <circle cx="200" cy="145" r="6"/>
+    <circle cx="280" cy="175" r="6"/>
+    <circle cx="360" cy="155" r="6"/>
+    <circle cx="440" cy="185" r="6"/>
+    <circle cx="520" cy="205" r="6"/>
+    <circle cx="600" cy="225" r="6"/>
+    <circle cx="680" cy="245" r="6"/>
+    <circle cx="760" cy="265" r="6"/>
+  </g>
+
+</svg>
