@@ -1,0 +1,30 @@
+name: Lightweight Git Tag
+
+on:
+  # Manual trigger to specify custom tag
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Custom tag name (optional)'
+        required: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      # Sanity check step to confirm workflow runs
+      - name: Sanity Check
+        run: |
+          echo "Workflow triggered with tag_name: ${{ github.event.inputs.tag_name }}"
+
+      # Checkout the repo
+      - name: Checkout repository
+        if: ${{ github.event.inputs.tag_name != '' }}
+        uses: actions/checkout@v3
+
+      # Create and push the tag
+      - name: Create and push tag
+        if: ${{ github.event.inputs.tag_name != '' }}
+        run: |
+          git tag ${{ github.event.inputs.tag_name }}"
+          git push origin ${{ github.event.inputs.tag_name }}"
