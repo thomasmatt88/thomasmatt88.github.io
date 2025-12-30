@@ -25,19 +25,19 @@ jobs:
 
       # Checkout the repo
       - name: Checkout repository
-        if: ${{ github.event.inputs.tag_name != ''
+        if: ${{ github.event.inputs.tag_name != '' }}
         uses: actions/checkout@v3
 
       # Configure Git for tagging
       - name: Setup Git
-        if: ${{ github.event.inputs.tag_name != ''
+        if: ${{ github.event.inputs.tag_name != '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       # Determine tag name
       - name: Determine tag name
-        if: ${{ github.event.inputs.tag_name != ''
+        if: ${{ github.event.inputs.tag_name != '' }}
         id: tagname
         run: |
           # If manually triggered with tag_name input, use it
@@ -53,7 +53,7 @@ jobs:
 
       # Create and push the tag
       - name: Create and push tag
-        if: ${{ github.event.inputs.tag_name != ''
+        if: ${{ github.event.inputs.tag_name != '' }}
         run: |
           git tag "$TAG"
           git push origin "$TAG"
