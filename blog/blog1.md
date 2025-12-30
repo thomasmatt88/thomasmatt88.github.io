@@ -1,23 +1,33 @@
 <br>
 <br>
-I will kickstart my blogging journey by distilling a very important concept from perhaps the most popular Data Engineering blogpost of all time, ["Functional Data Engineering -- a modern paradigm for batch data processing"](https://maximebeauchemin.medium.com/functional-data-engineering-a-modern-paradigm-for-batch-data-processing-2327ec32c42a). That is the concept of incrementally processing "late-arriving data". 
 
-"Late-arriving" data is very common in Internet of Things (IOT) systems. Edge devices often temporarily lose connection to a central server -- while the data stream is interrupted the device can continue recording data. The Cloud data platform team at Tesla (named Fleet Analytics at the time I worked there), digests massive amounts of data and a good portion of that data is "late-arriving" as millions of Tesla vehicles have intermittent connection to Tesla's cloud. **Big data needs to be processed as soon as data arrives but should not be reprocessed.** The strategy to incrementally process "late-arriving" data, detailed below, was heavily evangelized by the Fleet Analytics team.
+I will kickstart my blogging journey by distilling one very important concept -- incrementally processing "late-arriving data" -- from ["Functional Data Engineering -- a modern paradigm for batch data processing"](https://maximebeauchemin.medium.com/functional-data-engineering-a-modern-paradigm-for-batch-data-processing-2327ec32c42a), perhaps the most popular Data Engineering blogpost of all time.
 
-It is critical to dissociate *event timestamp* (when event occured or measuremment was made), *received timestamp* (when record was ingested to cloud), and *processing timestamp* (when record was processed in data pipeline). As mentioned in IOT systems, there can be a significant lag between event timestamp and received timestamp. For illustrative purposes we will only deal with date format and assume received date and processing date are always equal. 
+"Late-arriving" data is inherent to Internet of Things (IOT) systems. Edge devices often temporarily lose connection to a central server -- while the data stream is interrupted, the device can continue recording and buffering data. The Cloud Data Platform team at Tesla (named Fleet Analytics during my tenure at Tesla), digests massive amounts of data and a good portion of that data is "late-arriving" as millions of Tesla vehicles have intermittent cellular / WiFi connection and consequentially intermittent connection to Tesla's cloud. **Big data needs to be processed as soon as data arrives but should not be reprocessed.** The strategy to incrementally process "late-arriving" data, detailed below, was heavily evangelized by the Fleet Analytics team.
 
 <h2>Problem Statement</h2>
-Assume we want to track the total number of alerts of our fleet over time -- ensure it is trending down and we are alerted to any spikes.
+Assume we want to track the total number of alerts of our fleet over time -- ensure it is trending down and we are alerted to any spikes. How can we do so with minimal resources (i.e. reprocessing of data) and minimal latency?
+<br>
+<br>
 
 ![Figure 1](figure1.svg)
 
 <h2>Data Pipeline</h2>
 
+In general, it is critical to dissociate *event timestamp* (when event occured or measurement was made), *received timestamp* (when record was ingested to cloud), and *processing timestamp* (when record was processed in data pipeline). As mentioned in IOT systems, there can be a significant lag between *event timestamp* and *received timestamp*. For illustrative purposes we will only deal with date format and assume `received_date` and `processing_date` are always equal. 
+<br>
+
 <!-- https://www.reddit.com/r/vscode/comments/1ibntfy/svg_files_open_as_previews_i_want_them_to_open_as/ -->
 ![Data Pipeline](pipeline1.svg)
 
+<br>
+<br>
+
+<h3>SOURCE_TABLE &rarr; ALERT_COUNTS_INCREMENTAL</h3>
+<br>
+
 <table>
-<caption>SOURCE_TABLE</caption>
+<caption style="font-weight: bold;">SOURCE_TABLE</caption>
   <thead>
     <tr>
       <th>event_date</th>
@@ -33,12 +43,12 @@ Assume we want to track the total number of alerts of our fleet over time -- ens
     <tr style="color: orange;"><td>2000-01-02</td><td>2001-01-02</td><td>P0171</td><td>JA4AZ2A38JJ600754</td></tr>
     <tr style="color: blue;"><td>2000-01-03</td><td>2001-01-03</td><td>P0340</td><td>1FMCU9DG9CKA65334</td></tr>
   </tbody>
+  <caption style="caption-side: bottom;font-size: small;">Record colors reflect partitioning on received_date.</caption>
 </table>
+<br>
 
-It is critical that the top level partition for the source table is `received_date`
-
-SOURCE_TABLE &rarr; ALERT_COUNTS_INCREMENTAL <br>
 Every day, extract data from SOURCE_TABLE for previous `received_date`, and compute counts of alert for each `event_date`. Said differently, on each day we will compute the incremental alert counts for each `event_date`.
+<br>
 
 ```sql
 INSERT INTO ALERT_COUNTS_INCREMENTAL
@@ -47,10 +57,12 @@ FROM SOURCE_TABLE
 WHERE received_date = @YESTERDAY
 GROUP BY received_date, event_date
 ```
-We filter on `received_date`, which is why it was critical to partition by `received_date` in SOURCE_TABLE.
+We filter on `received_date`, leveraging the partition by `received_date` in SOURCE_TABLE.
+<br>
+<br>
 
 <table>
-<caption>ALERT_COUNTS_INCREMENTAL</caption>
+<caption style="font-weight: bold;">ALERT_COUNTS_INCREMENTAL</caption>
   <thead>
     <tr>
       <th>event_date</th>
@@ -64,15 +76,18 @@ We filter on `received_date`, which is why it was critical to partition by `rece
     <tr style="color: orange;"><td>2000-01-02</td><td>2001-01-02</td><td>1</td></tr>
     <tr style="color: blue;"><td>2000-01-03</td><td>2001-01-03</td><td>1</td></tr>
   </tbody>
+    <caption style="caption-side: bottom;font-size: small;">Record colors reflect partitioning on received_date.</caption>
 </table>
 
-It is critical that the top level partition for the source table is `received_date`.
-
-Never append, always insert overwrite (Idempotence). When inserting incremental results into Incremental Table, insert overwrite the whole received_date partition each time. This will make sure that the pipeline can be re-run or backfilled without fear of inserting duplicates into the Incremental Table.
-
-ALERT_COUNTS_INCREMENTAL &rarr; ALERT_COUNTS_FINAL <br>
-
+Never append, always insert overwrite (Idempotence). When inserting incremental results into ALERT_COUNTS_INCREMENTAL, insert overwrite the whole `received_date` partition each time. This will make sure that the pipeline can be re-run or backfilled without fear of inserting duplicates into ALERT_COUNTS_INCREMENTAL.
+<br>
+<br>
+<br>
+<h3>ALERT_COUNTS_INCREMENTAL &rarr; ALERT_COUNTS_FINAL </h3>
+<br>
 Finally, query incremental table to recover final total number of alerts, for our dashboard. This step will process all the results/rows from the incremental table each time it is run, but this table is many orders of magnitude smaller than the source table.
+<br>
+<br>
 
 ```sql
 INSERT INTO ALERT_COUNTS_FINAL
@@ -80,6 +95,7 @@ SELECT event_date, SUM(alerts_count) AS total_alerts_count
 FROM ALERT_COUNTS_INCREMENTAL
 GROUP BY event_date
 ```
+<br>
 
 <table>
 <caption>ALERT_COUNTS_FINAL</caption>
