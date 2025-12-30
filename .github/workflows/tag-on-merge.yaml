@@ -20,7 +20,7 @@ jobs:
     steps:
       # Sanity check step to confirm workflow runs
       - name: Sanity Check
-        run: echo "Workflow triggered with tag_name: ${{ github.events.inputs.tag_name }}!"
+        run: echo "Workflow triggered with tag_name: ${{ github.event.inputs.tag_name }}!"
 
       # Checkout the repo
       - name: Checkout repository
