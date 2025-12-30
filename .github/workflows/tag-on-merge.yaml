@@ -18,6 +18,10 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
+      # Sanity check step to confirm workflow runs
+      - name: Sanity Check
+        run: echo "✅ Workflow triggered! Event: ${{ github.event_name }}"
+
       # Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v3
