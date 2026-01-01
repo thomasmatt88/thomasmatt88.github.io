@@ -77,6 +77,8 @@ Consider the slice of the datacube below:
   </tbody>
 </table>
 
+`CUBE`, `ROLLUP` are usually available in data warehouse extensions.
+
 <table>
   <thead>
     <tr>
@@ -313,11 +315,60 @@ WHERE sale_year = 2024
 GROUP BY CUBE (store_name, product);
 ```
 
+or 
+
+```sql
+SELECT store_name, product,
+    SUM(quantity) AS total
+FROM dbo.fact_sales
+WHERE sale_year = 2024
+GROUP BY GROUPING SETS (
+  (store_name, product),
+  (store_name),
+  (product),
+  ()
+);
+```
+
+The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
+
+```sql
+CUBE (a, b, c)
+```
+is equivalent to 
+
+```sql
+GROUPING SETS (
+    ( a, b, c ),
+    ( a, b    ),
+    ( a,    c ),
+    ( a       ),
+    (    b, c ),
+    (    b    ),
+    (       c ),
+    (         )
+)
+```
+
+2^**3** = 8
+
 [The `CUBE` clause is particularly useful in data warehousing and reporting scenarios where you need to perform multi-dimensional analysis. It creates a grouping set for each combination of values in the specified columns, including all possible aggregations.](https://www.datacamp.com/doc/mysql/mysql-cube)
 
 It is important to know the number of records to be stored when creating a data cube. A cube will produce a row for all possible combinations of the grouping dimensions. In our example, we have one dimension with a cardinality of 4 (product) and one dimension with a cardinality of 3 (store_name). We add the NULL value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
 
 An example of where `ROLLUP` is applicable, when grouping by year, month, day. If you group by year, then you want to group by all of the months of the year, and if you group by month, then you want to group by all of the days of the month. We don’t have to calculate the case where we group by month and sum all of the years, for example…..End product of the Rollup would be “GROUP BY year, month, day” union “GROUP BY year” that includes all months and all days union “GROUP BY year, month” which includes all days for a specific year and month
+
+```sql
+ROLLUP (year, month, day)
+```
+is equivalent to 
+```sql
+GROUPING SETS (
+  (year, month, day),
+  (year, month),
+  (year),
+  ()
+)
 
 
 <table>
@@ -422,3 +473,9 @@ AND product = 'coffee';
     <tr><td>2023</td><td>Dunkin</td><td>Juice</td><td>2</td></tr>
   </tbody>
 </table>
+
+
+extra resources:
+- https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
+- https://stackoverflow.com/questions/37975227/what-is-the-difference-between-cube-rollup-and-groupby-operators
+- https://www.postgresql.org/docs/9.5/queries-table-expressions.html#QUERIES-GROUPING-SETS
