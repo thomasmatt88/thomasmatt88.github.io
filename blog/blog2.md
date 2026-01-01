@@ -1,83 +1,67 @@
 <br>
 <br>
 
-Data warehouses involve *write-once, read-many* aggregate (COUNT, SUM, AVG, MIN, or MAX) workloads. It is wasteful to crunch through common aggregations every query. Futhermore, it may not be prudent to allow readers to spin up huge clusters to perform expensive queries. Instead, these common query results should be calculated once, cached, and available to all readers. One way to do so is with a **materialized view**.
-
-<h3> Materialized View vs View </h3>
-
-- Both are a table-like object whose contents are the results of some query 
-- A Materialized View is an actual copy of the query results, written to disk. When the underlying data changes, a materialized view needs to be updated, because it is a denormalized copy of the data. The database can do that automatically, but such updates make writes more expensive, which is why materialized views are not often used in write-heavy OLTP databases. In read-heavy data warehouses, such as OLAP, they can make more sense. Materialized views can also be updated/refreshed on a schedule (e.g. once per day) instead of whenever the underlying data changes.
-- A standard (virtual) View is just a shortcut for writing queries. When you read from a virtual view, the SQL engine expands it into the view’s underlying query on the fly and then processes the expanded query. 
+Data warehouses (OLAP databases) involve *write-once, read-many* aggregate (`COUNT`, `SUM`, `AVG`, `MIN`, or `MAX`) workloads. It is wasteful to crunch through common aggregations for every user's query. Futhermore, it may not be prudent to allow all readers to spin up huge clusters to perform expensive queries. Instead, these common query results should be calculated once, persisted, and available to all readers. One way to persist the data results that is native to the data warehouse is with a `MATERIALIZED VIEW`. As opposed to a standard (virtual) `VIEW`, which is simply a shortcup / wrapper over a longer SQL query, a `MATERIALIZED VIEW` is an actual copy of the underlying query results, written to disk. When the underlying data changes, a materialized view needs to be refreshed.
 
 ```sql
 CREATE MATERIALIZED VIEW mv AS SELECT * FROM my_table;
-REFRESH MATERIALIZED VIEW mv
+REFRESH MATERIALIZED VIEW mv;
 ```
 
-A common special case of a materialized view is known as a **Data Cube** or **OLAP Cube** 
-- grid of aggregates grouped by different dimensions 
-- The advantage of a materialized data cube is that certain queries become very fast because they have effectively been precomputed. 
+A common special case of a `MATERIALIZED VIEW` is known as a **Data Cube** or **OLAP Cube**: grid of aggregates over an underlying fact table grouped by different dimensions.
 
-![Figure 2](figure2.png)
+![Figure 2](figure2.png)<figcaption style="font-size: small;">Figure above from "Designing Data-Intensive Applications</figcaption>
 
 In general, facts often have more than two dimensions. E.g. five dimensions: date, product, store, promotion, and customer. It’s a lot harder to imagine what a five-dimensional hypercube would look like, but the principle remains the same: each cell contains the sales for a particular date-product-store-promotion-customer combination. These values can then repeatedly be summarized along each of the dimensions. 
-
-The disadvantage is that a data cube doesn’t have the same flexibility as querying the raw data. In example above, there is no way of calculating which proportion of sales comes from items that cost more than $100, because the price isn’t one of the dimensions. Most data warehouses therefore try to keep as much raw data as possible, and use aggregates such as data cubes only as a performance boost for certain queries. 
 
 The number of combinations of aggregations is not solely dependend on the number of dimensions of the cube. **Cardinality** of each dimension plays an important role. Cardinality is the uniqueness of data values in a dimension. Low cardinality means that a column has a lot of duplicate values in its set. High cardinality means that the column contains a large percentage of completely unique values. A column containing a single value will always be the lowest possible cardinality. A column containing unique IDs will always be the highest possible cardinality.
 <br>
 <br>
-Consider the slice of the datacube below:
+<h2> Example </h2>
+
+`GROUPING SETS`, `CUBE`, and `ROLLUP` are essentially syntax that extend the capabilities of `GROUP BY` and are found in data warehouse DBMSs. It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a *data cube*.
+
+Consider the fact table:
 <table>
   <thead>
     <tr>
-      <th>year=2024</th>
-      <th>dunkin</th>
-      <th>peets</th>
-      <th>starbucks</th>
-      <th>total</th>
+      <th>sale_year</th>
+      <th>store</th>
+      <th>product</th>
+      <th>quantity</th>
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <th>coffee</th>
-      <td>8</td>
-      <td>3</td>
-      <td>10</td>
-      <td>21</td>
-    </tr>
-    <tr>
-      <th>juice</th>
-      <td>3</td>
-      <td>1</td>
-      <td>2</td>
-      <td>6</td>
-    </tr>
-    <tr>
-      <th>pastries</th>
-      <td>6</td>
-      <td>3</td>
-      <td>5</td>
-      <td>14</td>
-    </tr>
-    <tr>
-      <th>sandwhich</th>
-      <td>5</td>
-      <td>2</td>
-      <td>6</td>
-      <td>13</td>
-    </tr>
-    <tr>
-      <th>total</th>
-      <td>22</td>
-      <td>9</td>
-      <td>23</td>
-      <td>54</td>
-    </tr>
+    <!-- 2024 -->
+    <tr><td>2024</td><td>Starbucks</td><td>Coffee</td><td>10</td></tr>
+    <tr><td>2024</td><td>Starbucks</td><td>Pastries</td><td>5</td></tr>
+    <tr><td>2024</td><td>Starbucks</td><td>Sandwich</td><td>6</td></tr>
+    <tr><td>2024</td><td>Starbucks</td><td>Juice</td><td>2</td></tr>
+    <tr><td>2024</td><td>Peets</td><td>Coffee</td><td>3</td></tr>
+    <tr><td>2024</td><td>Peets</td><td>Pastries</td><td>3</td></tr>
+    <tr><td>2024</td><td>Peets</td><td>Sandwich</td><td>2</td></tr>
+    <tr><td>2024</td><td>Peets</td><td>Juice</td><td>1</td></tr>
+    <tr><td>2024</td><td>Dunkin</td><td>Coffee</td><td>8</td></tr>
+    <tr><td>2024</td><td>Dunkin</td><td>Pastries</td><td>6</td></tr>
+    <tr><td>2024</td><td>Dunkin</td><td>Sandwich</td><td>5</td></tr>
+    <tr><td>2024</td><td>Dunkin</td><td>Juice</td><td>3</td></tr>
+    <!-- 2023 -->
+    <tr><td>2023</td><td>Starbucks</td><td>Coffee</td><td>8</td></tr>
+    <tr><td>2023</td><td>Starbucks</td><td>Pastries</td><td>4</td></tr>
+    <tr><td>2023</td><td>Starbucks</td><td>Sandwich</td><td>5</td></tr>
+    <tr><td>2023</td><td>Starbucks</td><td>Juice</td><td>1</td></tr>
+    <tr><td>2023</td><td>Peets</td><td>Coffee</td><td>2</td></tr>
+    <tr><td>2023</td><td>Peets</td><td>Pastries</td><td>2</td></tr>
+    <tr><td>2023</td><td>Peets</td><td>Sandwich</td><td>1</td></tr>
+    <tr><td>2023</td><td>Peets</td><td>Juice</td><td>1</td></tr>
+    <tr><td>2023</td><td>Dunkin</td><td>Coffee</td><td>6</td></tr>
+    <tr><td>2023</td><td>Dunkin</td><td>Pastries</td><td>5</td></tr>
+    <tr><td>2023</td><td>Dunkin</td><td>Sandwich</td><td>4</td></tr>
+    <tr><td>2023</td><td>Dunkin</td><td>Juice</td><td>2</td></tr>
   </tbody>
 </table>
 
-`CUBE`, `ROLLUP` are usually available in data warehouse extensions.
+
 
 <table>
   <thead>
@@ -136,6 +120,21 @@ SELECT
 FROM dbo.fact_sales
 WHERE sale_year = 2024
 GROUP BY store_name, product;
+```
+or
+```sql
+SELECT
+    store_name,
+    product,
+    SUM(quantity) AS total
+FROM dbo.fact_sales
+WHERE sale_year = 2024
+GROUP BY GROUPING SETS (
+  (store_name, product)--,
+  --(product),
+  --(store_name),
+  --()
+);
 ```
 
 <table>
@@ -196,6 +195,21 @@ FROM dbo.fact_sales
 WHERE sale_year = 2024
 GROUP BY store_name, product WITH ROLLUP;
 ```
+or
+```sql
+SELECT
+    store_name,
+    product,
+    SUM(quantity) AS total
+FROM dbo.fact_sales
+WHERE sale_year = 2024
+GROUP BY GROUPING SETS (
+  (store_name, product),
+  --(product),
+  (store_name),
+  ()
+);
+```
 
 <table>
   <thead>
@@ -255,6 +269,21 @@ FROM dbo.fact_sales
 WHERE sale_year = 2024
 GROUP BY product, store_name WITH ROLLUP;
 ```
+or
+```sql
+SELECT
+    store_name,
+    product,
+    SUM(quantity) AS total
+FROM dbo.fact_sales
+WHERE sale_year = 2024
+GROUP BY GROUPING SETS (
+  (store_name, product),
+  (product),
+  --(store_name),
+  ()
+);
+```
 
 <table>
   <thead>
@@ -306,6 +335,7 @@ GROUP BY product, store_name WITH ROLLUP;
 </table>
 
 ```sql
+CREATE MATERIALIZED VIEW dbo.cube_sales AS
 SELECT
     store_name,
     product,
@@ -318,59 +348,20 @@ GROUP BY CUBE (store_name, product);
 or 
 
 ```sql
+CREATE MATERIALIZED VIEW dbo.cube_sales AS
 SELECT store_name, product,
     SUM(quantity) AS total
 FROM dbo.fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
   (store_name, product),
-  (store_name),
   (product),
+  (store_name),
   ()
 );
 ```
 
-The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
-
-```sql
-CUBE (a, b, c)
-```
-is equivalent to 
-
-```sql
-GROUPING SETS (
-    ( a, b, c ),
-    ( a, b    ),
-    ( a,    c ),
-    ( a       ),
-    (    b, c ),
-    (    b    ),
-    (       c ),
-    (         )
-)
-```
-
-2^**3** = 8
-
-[The `CUBE` clause is particularly useful in data warehousing and reporting scenarios where you need to perform multi-dimensional analysis. It creates a grouping set for each combination of values in the specified columns, including all possible aggregations.](https://www.datacamp.com/doc/mysql/mysql-cube)
-
-It is important to know the number of records to be stored when creating a data cube. A cube will produce a row for all possible combinations of the grouping dimensions. In our example, we have one dimension with a cardinality of 4 (product) and one dimension with a cardinality of 3 (store_name). We add the NULL value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
-
-An example of where `ROLLUP` is applicable, when grouping by year, month, day. If you group by year, then you want to group by all of the months of the year, and if you group by month, then you want to group by all of the days of the month. We don’t have to calculate the case where we group by month and sum all of the years, for example…..End product of the Rollup would be “GROUP BY year, month, day” union “GROUP BY year” that includes all months and all days union “GROUP BY year, month” which includes all days for a specific year and month
-
-```sql
-ROLLUP (year, month, day)
-```
-is equivalent to 
-```sql
-GROUPING SETS (
-  (year, month, day),
-  (year, month),
-  (year),
-  ()
-)
-
-
+Now, we can `SUM` the total sales quantity in 2024 for coffee by querying the fact table (dbo.fact_sales) directly or more efficiently by querying the precomputed data cube (dbo.cube_sales).
 <table>
   <thead>
     <tr>
@@ -435,45 +426,47 @@ WHERE sale_year = 2024
 AND product = 'coffee';
 ```
 
-<table>
-  <thead>
-    <tr>
-      <th>Sale Year</th>
-      <th>Store</th>
-      <th>Product</th>
-      <th>Quantity</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- 2024 -->
-    <tr><td>2024</td><td>Starbucks</td><td>Coffee</td><td>10</td></tr>
-    <tr><td>2024</td><td>Starbucks</td><td>Pastries</td><td>5</td></tr>
-    <tr><td>2024</td><td>Starbucks</td><td>Sandwich</td><td>6</td></tr>
-    <tr><td>2024</td><td>Starbucks</td><td>Juice</td><td>2</td></tr>
-    <tr><td>2024</td><td>Peets</td><td>Coffee</td><td>3</td></tr>
-    <tr><td>2024</td><td>Peets</td><td>Pastries</td><td>3</td></tr>
-    <tr><td>2024</td><td>Peets</td><td>Sandwich</td><td>2</td></tr>
-    <tr><td>2024</td><td>Peets</td><td>Juice</td><td>1</td></tr>
-    <tr><td>2024</td><td>Dunkin</td><td>Coffee</td><td>8</td></tr>
-    <tr><td>2024</td><td>Dunkin</td><td>Pastries</td><td>6</td></tr>
-    <tr><td>2024</td><td>Dunkin</td><td>Sandwich</td><td>5</td></tr>
-    <tr><td>2024</td><td>Dunkin</td><td>Juice</td><td>3</td></tr>
-    <!-- 2023 -->
-    <tr><td>2023</td><td>Starbucks</td><td>Coffee</td><td>8</td></tr>
-    <tr><td>2023</td><td>Starbucks</td><td>Pastries</td><td>4</td></tr>
-    <tr><td>2023</td><td>Starbucks</td><td>Sandwich</td><td>5</td></tr>
-    <tr><td>2023</td><td>Starbucks</td><td>Juice</td><td>1</td></tr>
-    <tr><td>2023</td><td>Peets</td><td>Coffee</td><td>2</td></tr>
-    <tr><td>2023</td><td>Peets</td><td>Pastries</td><td>2</td></tr>
-    <tr><td>2023</td><td>Peets</td><td>Sandwich</td><td>1</td></tr>
-    <tr><td>2023</td><td>Peets</td><td>Juice</td><td>1</td></tr>
-    <tr><td>2023</td><td>Dunkin</td><td>Coffee</td><td>6</td></tr>
-    <tr><td>2023</td><td>Dunkin</td><td>Pastries</td><td>5</td></tr>
-    <tr><td>2023</td><td>Dunkin</td><td>Sandwich</td><td>4</td></tr>
-    <tr><td>2023</td><td>Dunkin</td><td>Juice</td><td>2</td></tr>
-  </tbody>
-</table>
+The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
 
+```sql
+CUBE (a, b, c)
+```
+is equivalent to 
+
+```sql
+GROUPING SETS (
+    ( a, b, c ),
+    ( a, b    ),
+    ( a,    c ),
+    ( a       ),
+    (    b, c ),
+    (    b    ),
+    (       c ),
+    (         )
+)
+```
+
+2^**3** = 8
+
+[The `CUBE` clause is particularly useful in data warehousing and reporting scenarios where you need to perform multi-dimensional analysis. It creates a grouping set for each combination of values in the specified columns, including all possible aggregations.](https://www.datacamp.com/doc/mysql/mysql-cube)
+
+It is important to know the number of records to be stored when creating a data cube. A cube will produce a row for all possible combinations of the grouping dimensions. In our example, we have one dimension with a cardinality of 4 (product) and one dimension with a cardinality of 3 (store_name). We add the NULL value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
+
+An example of where `ROLLUP` is applicable, when grouping by year, month, day. If you group by year, then you want to group by all of the months of the year, and if you group by month, then you want to group by all of the days of the month. We don’t have to calculate the case where we group by month and sum all of the years, for example…..End product of the Rollup would be “GROUP BY year, month, day” union “GROUP BY year” that includes all months and all days union “GROUP BY year, month” which includes all days for a specific year and month
+
+```sql
+ROLLUP (year, quarter, month, day)
+```
+is equivalent to 
+```sql
+GROUPING SETS (
+  (year, quarter, month, day),
+  (year, quarter, month),
+  (year, quarter),
+  (year),
+  ()
+)
+```
 
 extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
