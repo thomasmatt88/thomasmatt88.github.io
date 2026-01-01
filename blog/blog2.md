@@ -455,18 +455,190 @@ It is important to know the number of records to be stored when creating a data 
 An example of where `ROLLUP` is applicable, when grouping by year, month, day. If you group by year, then you want to group by all of the months of the year, and if you group by month, then you want to group by all of the days of the month. We don’t have to calculate the case where we group by month and sum all of the years, for example…..End product of the Rollup would be “GROUP BY year, month, day” union “GROUP BY year” that includes all months and all days union “GROUP BY year, month” which includes all days for a specific year and month
 
 ```sql
-ROLLUP (year, quarter, month, day)
+GROUP BY year, quarter, month WITH ROLLUP
 ```
 is equivalent to 
 ```sql
-GROUPING SETS (
-  (year, quarter, month, day),
+GROUP BY GROUPING SETS (
   (year, quarter, month),
   (year, quarter),
   (year),
   ()
 )
 ```
+
+Example:
+
+<table>
+  <thead>
+    <tr>
+      <th>Year</th>
+      <th>Quarter</th>
+      <th>Month</th>
+      <th>Day</th>
+      <th>Quantity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2024</td>
+      <td>Q1</td>
+      <td>January</td>
+      <td>1</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q1</td>
+      <td>January</td>
+      <td>3</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q1</td>
+      <td>March</td>
+      <td>6</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q2</td>
+      <td>May</td>
+      <td>5</td>
+      <td>22</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q1</td>
+      <td>January</td>
+      <td>2</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q1</td>
+      <td>January</td>
+      <td>21</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q1</td>
+      <td>February</td>
+      <td>3</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q4</td>
+      <td>November</td>
+      <td>17</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+
+```sql
+SELECT year, quarter, month, SUM(quantity) AS total
+FROM dbo.SalesQuantity
+GROUP BY year, quarter, month WITH ROLLUP
+ORDER BY year, quarter, month
+```
+
+<table>
+  <caption>Sales Totals by Year, Quarter, and Month</caption>
+  <thead>
+    <tr>
+      <th>Year</th>
+      <th>Quarter</th>
+      <th>Month</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>null</td>
+      <td>null</td>
+      <td>null</td>
+      <td>66</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>null</td>
+      <td>null</td>
+      <td>24</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q1</td>
+      <td>null</td>
+      <td>22</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q1</td>
+      <td>February</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q1</td>
+      <td>January</td>
+      <td>17</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q4</td>
+      <td>null</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>2023</td>
+      <td>Q4</td>
+      <td>November</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>null</td>
+      <td>null</td>
+      <td>42</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q1</td>
+      <td>null</td>
+      <td>20</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q1</td>
+      <td>January</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q1</td>
+      <td>March</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q2</td>
+      <td>null</td>
+      <td>22</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td>Q2</td>
+      <td>May</td>
+      <td>22</td>
+    </tr>
+  </tbody>
+</table>
+
+
 
 extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
