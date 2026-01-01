@@ -77,16 +77,6 @@ Consider the slice of the datacube below:
   </tbody>
 </table>
 
-```sql
-SELECT
-    store_name,
-    product,
-    SUM(quantity) AS total
-FROM dbo.fact_sales
-WHERE sale_year = 2024
-GROUP BY CUBE (store_name, product);
-```
-
 <table>
   <thead>
     <tr>
@@ -253,6 +243,82 @@ GROUP BY store_name, product WITH ROLLUP;
     </tr>
   </tbody>
 </table>
+
+```sql
+SELECT
+    store_name,
+    product,
+    SUM(quantity) AS total
+FROM dbo.fact_sales
+WHERE sale_year = 2024
+GROUP BY product, store_name WITH ROLLUP;
+```
+
+<table>
+  <thead>
+    <tr>
+      <th>year=2024</th>
+      <th>dunkin</th>
+      <th>peets</th>
+      <th>starbucks</th>
+      <th>total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>coffee</th>
+      <td style="background-color: yellow;">8</td>
+      <td style="background-color: yellow;">3</td>
+      <td style="background-color: yellow;">10</td>
+      <td style="background-color: yellow;">21</td>
+    </tr>
+    <tr>
+      <th>juice</th>
+      <td style="background-color: yellow;">3</td>
+      <td style="background-color: yellow;">1</td>
+      <td style="background-color: yellow;">2</td>
+      <td style="background-color: yellow;">6</td>
+    </tr>
+    <tr>
+      <th>pastries</th>
+      <td style="background-color: yellow;">6</td>
+      <td style="background-color: yellow;">3</td>
+      <td style="background-color: yellow;">5</td>
+      <td style="background-color: yellow;">14</td>
+    </tr>
+    <tr>
+      <th>sandwhich</th>
+      <td style="background-color: yellow;">5</td>
+      <td style="background-color: yellow;">2</td>
+      <td style="background-color: yellow;">6</td>
+      <td style="background-color: yellow;">13</td>
+    </tr>
+    <tr>
+      <th>total</th>
+      <td style="background-color: yellow;">22</td>
+      <td style="background-color: yellow;">9</td>
+      <td style="background-color: yellow;">23</td>
+      <td style="background-color: yellow;">54</td>
+    </tr>
+  </tbody>
+</table>
+
+```sql
+SELECT
+    store_name,
+    product,
+    SUM(quantity) AS total
+FROM dbo.fact_sales
+WHERE sale_year = 2024
+GROUP BY CUBE (store_name, product);
+```
+
+[The `CUBE` clause is particularly useful in data warehousing and reporting scenarios where you need to perform multi-dimensional analysis. It creates a grouping set for each combination of values in the specified columns, including all possible aggregations.](https://www.datacamp.com/doc/mysql/mysql-cube)
+
+It is important to know the number of records to be stored when creating a data cube. A cube will produce a row for all possible combinations of the grouping dimensions. In our example, we have one dimension with a cardinality of 4 (product) and one dimension with a cardinality of 3 (store_name). We add the NULL value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
+
+An example of where `ROLLUP` is applicable, when grouping by year, month, day. If you group by year, then you want to group by all of the months of the year, and if you group by month, then you want to group by all of the days of the month. We don’t have to calculate the case where we group by month and sum all of the years, for example…..End product of the Rollup would be “GROUP BY year, month, day” union “GROUP BY year” that includes all months and all days union “GROUP BY year, month” which includes all days for a specific year and month
+
 
 <table>
   <thead>
