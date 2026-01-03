@@ -22,6 +22,8 @@ The number of combinations of aggregations is not solely dependend on the number
 `GROUPING SETS`, `CUBE`, and `ROLLUP` are special syntax that extend the capabilities of `GROUP BY` and are often available in OLAP Database Management Systems (DBMS). It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a *data cube*.
 
 Consider the fact table:
+<details>
+<summary>Show fact table</summary>
 <table>
   <thead>
     <tr>
@@ -60,9 +62,10 @@ Consider the fact table:
     <tr><td>2023</td><td>Dunkin</td><td>Juice</td><td>2</td></tr>
   </tbody>
 </table>
+</details>
 
-
-
+<details>
+<summary><strong>GROUP BY</strong></summary>
 <table>
   <thead>
     <tr>
@@ -136,7 +139,10 @@ GROUP BY GROUPING SETS (
   --()
 );
 ```
+</details>
 
+<details>
+<summary><strong>GROUP BY WITH ROLLUP</strong></summary>
 <table>
   <thead>
     <tr>
@@ -284,7 +290,10 @@ GROUP BY GROUPING SETS (
   ()
 );
 ```
+</details>
 
+<details>
+<summary><strong>GROUP BY CUBE</strong></summary>
 <table>
   <thead>
     <tr>
@@ -425,6 +434,7 @@ FROM dbo.cube_sales
 WHERE sale_year = 2024
 AND product = 'coffee';
 ```
+</details>
 
 The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
 
