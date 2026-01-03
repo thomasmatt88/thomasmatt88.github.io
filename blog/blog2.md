@@ -13,11 +13,9 @@ A common special case of a `MATERIALIZED VIEW` is known as a **Data Cube** or **
 ![Figure 2](figure2.png)<figcaption style="font-size: small;">Figure above from "Designing Data-Intensive Applications"</figcaption>
 
 In general, facts often have more than two dimensions (e.g. five dimensions such as date, product, store, promotion, and customer). It’s a lot harder to imagine what a five-dimensional hypercube would look like, but the principle remains the same: each cell contains the sales for a particular date-product-store-promotion-customer combination.
-
-The number of combinations of aggregations is not solely dependend on the number of dimensions of the cube. **Cardinality** of each dimension plays an important role. Cardinality is the uniqueness of data values in a dimension. Low cardinality means that a column has a lot of duplicate values in its set. High cardinality means that the column contains a large percentage of completely unique values. A column containing a single value will always be the lowest possible cardinality. A column containing unique IDs will always be the highest possible cardinality.
 <br>
 <br>
-<h2> Example </h2>
+<h2> Example 1</h2>
 
 `GROUPING SETS`, `CUBE`, and `ROLLUP` are special syntax that extend the capabilities of `GROUP BY` and are often available in OLAP Database Management Systems (DBMS). It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a *data cube*.
 
@@ -436,49 +434,12 @@ AND product = 'coffee';
 ```
 </details>
 
-The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
+<h2> Example 2</h2>
 
-```sql
-CUBE (a, b, c)
-```
-is equivalent to 
+`ROLLUP` is particularly useful when aggregating by date dimensions. If you `GROUP BY` year, then you may also want to `GROUP BY` all of the quarters of each year, and if you `GROUP BY` quarter, then you want to `GROUP BY` all of the months of each quarter. But, the groupings may not be useful in reverse order. Do we need to `SUM` sales in (Q1, February) across all years?
 
-```sql
-GROUPING SETS (
-    ( a, b, c ),
-    ( a, b    ),
-    ( a,    c ),
-    ( a       ),
-    (    b, c ),
-    (    b    ),
-    (       c ),
-    (         )
-)
-```
-
-2^**3** = 8
-
-[The `CUBE` clause is particularly useful in data warehousing and reporting scenarios where you need to perform multi-dimensional analysis. It creates a grouping set for each combination of values in the specified columns, including all possible aggregations.](https://www.datacamp.com/doc/mysql/mysql-cube)
-
-It is important to know the number of records to be stored when creating a data cube. A cube will produce a row for all possible combinations of the grouping dimensions. In our example, we have one dimension with a cardinality of 4 (product) and one dimension with a cardinality of 3 (store_name). We add the NULL value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
-
-An example of where `ROLLUP` is applicable, when grouping by year, month, day. If you group by year, then you want to group by all of the months of the year, and if you group by month, then you want to group by all of the days of the month. We don’t have to calculate the case where we group by month and sum all of the years, for example…..End product of the Rollup would be “GROUP BY year, month, day” union “GROUP BY year” that includes all months and all days union “GROUP BY year, month” which includes all days for a specific year and month
-
-```sql
-GROUP BY year, quarter, month WITH ROLLUP
-```
-is equivalent to 
-```sql
-GROUP BY GROUPING SETS (
-  (year, quarter, month),
-  (year, quarter),
-  (year),
-  ()
-)
-```
-
-Example:
-
+<details>
+<summary>Show fact table:</summary>
 <table>
   <thead>
     <tr>
@@ -548,16 +509,32 @@ Example:
     </tr>
   </tbody>
 </table>
+</details>
+
+<details>
+<summary><strong>GROUP BY WITH ROLLUP</strong></summary>
+
+```sql
+GROUP BY year, quarter, month WITH ROLLUP
+```
+is equivalent to 
+```sql
+GROUP BY GROUPING SETS (
+  (year, quarter, month),
+  (year, quarter),
+  (year),
+  ()
+)
+```
 
 ```sql
 SELECT year, quarter, month, SUM(quantity) AS total
-FROM dbo.SalesQuantity
+FROM dbo.fact_sales
 GROUP BY year, quarter, month WITH ROLLUP
 ORDER BY year, quarter, month
 ```
 
 <table>
-  <caption>Sales Totals by Year, Quarter, and Month</caption>
   <thead>
     <tr>
       <th>Year</th>
@@ -647,8 +624,37 @@ ORDER BY year, quarter, month
     </tr>
   </tbody>
 </table>
+</details>
 
+<h2> Performance Considerations</h2>
 
+The number of combinations of aggregations is not solely dependend on the number of dimensions of the cube. **Cardinality** of each dimension plays an important role. Cardinality is the uniqueness of data values in a dimension. Low cardinality means that a column has a lot of duplicate values in its set. High cardinality means that the column contains a large percentage of completely unique values. A column containing a single value will always be the lowest possible cardinality. A column containing unique IDs will always be the highest possible cardinality.
+
+The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
+
+```sql
+CUBE (a, b, c)
+```
+is equivalent to 
+
+```sql
+GROUPING SETS (
+    ( a, b, c ),
+    ( a, b    ),
+    ( a,    c ),
+    ( a       ),
+    (    b, c ),
+    (    b    ),
+    (       c ),
+    (         )
+)
+```
+
+2^**3** = 8
+
+[The `CUBE` clause is particularly useful in data warehousing and reporting scenarios where you need to perform multi-dimensional analysis. It creates a grouping set for each combination of values in the specified columns, including all possible aggregations.](https://www.datacamp.com/doc/mysql/mysql-cube)
+
+It is important to know the number of records to be stored when creating a data cube. A cube will produce a row for all possible combinations of the grouping dimensions. In our example, we have one dimension with a cardinality of 4 (product) and one dimension with a cardinality of 3 (store_name). We add the NULL value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
 
 extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
