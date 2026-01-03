@@ -633,7 +633,7 @@ As mentioned, materialized data cubes are important for *write-once, read-many* 
 The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
 
 ```sql
-CUBE (a, b, c)
+GROUP BY CUBE (a, b, c)
 ```
 is equivalent to 
 
