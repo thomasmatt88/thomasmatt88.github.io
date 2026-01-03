@@ -628,7 +628,7 @@ ORDER BY year, quarter, month
 
 <h2> Performance Considerations</h2>
 
-The number of combinations of aggregations is not solely dependend on the number of dimensions of the cube. **Cardinality** of each dimension plays an important role. Cardinality is the uniqueness of data values in a dimension. Low cardinality means that a column has a lot of duplicate values in its set. High cardinality means that the column contains a large percentage of completely unique values. A column containing a single value will always be the lowest possible cardinality. A column containing unique IDs will always be the highest possible cardinality.
+As mentioned, materialized data cubes are important for *write-once, read-many* workloads. But, it is important for the data engineer creating and maintaing the data cube to understand the performance footprint. 
 
 The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
 
@@ -652,9 +652,11 @@ GROUPING SETS (
 
 2^**3** = 8
 
-[The `CUBE` clause is particularly useful in data warehousing and reporting scenarios where you need to perform multi-dimensional analysis. It creates a grouping set for each combination of values in the specified columns, including all possible aggregations.](https://www.datacamp.com/doc/mysql/mysql-cube)
+However, the number of combinations of aggregations is not solely dependent on the number of dimensions of the cube. **Cardinality** of each dimension plays an important role. Cardinality is the uniqueness of data values in a dimension. Low cardinality means that a column has a lot of duplicate values in its set. High cardinality means that the column contains a large percentage of completely unique values. A column containing a single value will always be the lowest possible cardinality. A column containing unique IDs will always be the highest possible cardinality.
 
-It is important to know the number of records to be stored when creating a data cube. A cube will produce a row for all possible combinations of the grouping dimensions. In our example, we have one dimension with a cardinality of 4 (product) and one dimension with a cardinality of 3 (store_name). We add the NULL value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
+`CUBE` will produce a record for each *combination of values* in the specified columns. The data engineer should perform some data exploration on the underlying fact table before blindly creating a data cube. Considering each dimension in the data cube as a set of unique values, the number of records in the resulting data cube will be the cartesian product of all dimension sets (after adding a `NULL` value to each dimension set).
+
+In the **GROUP BY CUBE** section of Example 1, we have one dimension (store) with a cardinality of 3 (dunkin, peets, starbucks) and one dimension (product) with a cardinality of 4 (coffee, juice, pastries, sandwhich). We add the `NULL` value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
 
 extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
