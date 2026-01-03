@@ -10,16 +10,16 @@ REFRESH MATERIALIZED VIEW mv;
 
 A common special case of a `MATERIALIZED VIEW` is known as a **Data Cube** or **OLAP Cube**: grid of aggregates over an underlying fact table grouped by different dimensions.
 
-![Figure 2](figure2.png)<figcaption style="font-size: small;">Figure above from "Designing Data-Intensive Applications</figcaption>
+![Figure 2](figure2.png)<figcaption style="font-size: small;">Figure above from "Designing Data-Intensive Applications"</figcaption>
 
-In general, facts often have more than two dimensions. E.g. five dimensions: date, product, store, promotion, and customer. It’s a lot harder to imagine what a five-dimensional hypercube would look like, but the principle remains the same: each cell contains the sales for a particular date-product-store-promotion-customer combination. These values can then repeatedly be summarized along each of the dimensions. 
+In general, facts often have more than two dimensions (e.g. five dimensions such as date, product, store, promotion, and customer). It’s a lot harder to imagine what a five-dimensional hypercube would look like, but the principle remains the same: each cell contains the sales for a particular date-product-store-promotion-customer combination.
 
 The number of combinations of aggregations is not solely dependend on the number of dimensions of the cube. **Cardinality** of each dimension plays an important role. Cardinality is the uniqueness of data values in a dimension. Low cardinality means that a column has a lot of duplicate values in its set. High cardinality means that the column contains a large percentage of completely unique values. A column containing a single value will always be the lowest possible cardinality. A column containing unique IDs will always be the highest possible cardinality.
 <br>
 <br>
 <h2> Example </h2>
 
-`GROUPING SETS`, `CUBE`, and `ROLLUP` are essentially syntax that extend the capabilities of `GROUP BY` and are found in data warehouse DBMSs. It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a *data cube*.
+`GROUPING SETS`, `CUBE`, and `ROLLUP` are special syntax that extend the capabilities of `GROUP BY` and are often available in OLAP Database Management Systems (DBMS). It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a *data cube*.
 
 Consider the fact table:
 <table>
