@@ -658,6 +658,15 @@ However, the number of combinations of aggregations is not solely dependent on t
 
 In the **GROUP BY CUBE** section of Example 1, we have one dimension (store) with a cardinality of 3 (dunkin, peets, starbucks) and one dimension (product) with a cardinality of 4 (coffee, juice, pastries, sandwhich). We add the `NULL` value to each dimension (to factor in subtotals) and our resultant number of records is (4 + 1)*(3 + 1) = 20 records.
 
+```python
+import itertools
+stores = ['Starbucks', 'Peets', 'Dunkin', None]
+products = ['Coffee', 'Pastries', 'Sandwich', 'Juice', None]
+cube_combinations = itertools.product(stores, products) # cartesian product
+print(len(list(cube_combinations))) # == 20
+# can loop through cube_combinations to calculate data cube in python
+```
+
 <!-- extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
 - https://stackoverflow.com/questions/37975227/what-is-the-difference-between-cube-rollup-and-groupby-operators
