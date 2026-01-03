@@ -1,7 +1,7 @@
 <br>
 <br>
 
-Data warehouses (OLAP databases) involve *write-once, read-many* aggregate (`COUNT`, `SUM`, `AVG`, `MIN`, or `MAX`) workloads. It is wasteful to crunch through common aggregations for every user's query. Futhermore, it may not be prudent to allow all readers to spin up huge clusters to perform expensive queries. Instead, these common query results should be calculated once, persisted, and available to all readers. One way to persist the data results that is native to the data warehouse is with a `MATERIALIZED VIEW`. As opposed to a standard (virtual) `VIEW`, which is simply a shortcup / wrapper over a longer SQL query, a `MATERIALIZED VIEW` is an actual copy of the underlying query results, written to disk. When the underlying data changes, a materialized view needs to be refreshed.
+Data warehouses (OLAP databases) are used for many *write-once, read-many* aggregate (`COUNT`, `SUM`, `AVG`, `MIN`, or `MAX`) workloads. But, it is wasteful to crunch through common aggregations for every user's query. Futhermore, it may not be prudent to allow all readers to spin up huge clusters to perform expensive queries. Instead, these common query results should be calculated once, persisted, and available to all readers. One way to persist the data results that is native to the data warehouse is with a `MATERIALIZED VIEW`. As opposed to a standard (virtual) `VIEW`, which is simply a shortcup / wrapper over a longer SQL query, a `MATERIALIZED VIEW` is an actual copy of the underlying query results, written to disk. When the underlying data changes, a materialized view needs to be refreshed.
 
 ```sql
 CREATE MATERIALIZED VIEW mv AS SELECT * FROM my_table;
@@ -21,7 +21,7 @@ In general, facts often have more than two dimensions (e.g. five dimensions such
 
 Consider the fact table:
 <details>
-<summary>Show fact table</summary>
+<summary>Show dbo.fact_sales</summary>
 <table>
   <thead>
     <tr>
@@ -436,10 +436,10 @@ AND product = 'coffee';
 
 <h2> Example 2</h2>
 
-`ROLLUP` is particularly useful when aggregating by date dimensions. If you `GROUP BY` year, then you may also want to `GROUP BY` all of the quarters of each year, and if you `GROUP BY` quarter, then you want to `GROUP BY` all of the months of each quarter. But, the groupings may not be useful in reverse order. Do we need to `SUM` sales in (Q1, February) across all years?
+`ROLLUP` is particularly useful when aggregating by date dimensions. If you `GROUP BY` year, then you may also want to `GROUP BY` all of the quarters of each year, and if you `GROUP BY` quarter, then you want to `GROUP BY` all of the months of each quarter. But, the groupings may not be useful in reverse order. For example, do we need to `SUM` sales in (Q1, February) across all years?
 
 <details>
-<summary>Show fact table:</summary>
+<summary>Show dbo.fact_sales:</summary>
 <table>
   <thead>
     <tr>
@@ -628,7 +628,7 @@ ORDER BY year, quarter, month
 
 <h2> Performance Considerations</h2>
 
-As mentioned, materialized data cubes are important for *write-once, read-many* workloads. But, it is important for the data engineer creating and maintaing the data cube to understand the performance footprint. 
+As mentioned, materialized data cubes are important for *write-once, read-many* workloads. But, it is important for the data engineer creating and maintaing the data cube to understand its performance footprint. 
 
 The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
 
@@ -656,9 +656,9 @@ However, the number of combinations of aggregations is not solely dependent on t
 
 `CUBE` will produce a record for each *combination of values* in the specified columns. The data engineer should perform some data exploration on the underlying fact table before blindly creating a data cube. Considering each dimension in the data cube as a set of unique values, the number of records in the resulting data cube will be the cartesian product of all dimension sets (after adding a `NULL` value to each dimension set).
 
-In the **GROUP BY CUBE** section of Example 1, we have one dimension (store) with a cardinality of 3 (dunkin, peets, starbucks) and one dimension (product) with a cardinality of 4 (coffee, juice, pastries, sandwhich). We add the `NULL` value to each dimension (to factor in subtotals) and our result is (4 + 1)*(3 + 1) = 20 records.
+In the **GROUP BY CUBE** section of Example 1, we have one dimension (store) with a cardinality of 3 (dunkin, peets, starbucks) and one dimension (product) with a cardinality of 4 (coffee, juice, pastries, sandwhich). We add the `NULL` value to each dimension (to factor in subtotals) and our resultant number of records is (4 + 1)*(3 + 1) = 20 records.
 
-extra resources:
+<!-- extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
 - https://stackoverflow.com/questions/37975227/what-is-the-difference-between-cube-rollup-and-groupby-operators
-- https://www.postgresql.org/docs/9.5/queries-table-expressions.html#QUERIES-GROUPING-SETS
+- https://www.postgresql.org/docs/9.5/queries-table-expressions.html#QUERIES-GROUPING-SETS -->
