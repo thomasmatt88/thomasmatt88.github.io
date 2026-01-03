@@ -638,7 +638,7 @@ GROUP BY CUBE (a, b, c)
 is equivalent to 
 
 ```sql
-GROUPING SETS (
+GROUP BY GROUPING SETS (
     ( a, b, c ),
     ( a, b    ),
     ( a,    c ),
