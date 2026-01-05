@@ -21,7 +21,7 @@ In general, facts often have more than two dimensions (e.g. five dimensions such
 
 Consider the fact table:
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
-<summary>Show dbo.fact_sales</summary>
+<summary>Show fact_sales:</summary>
 <table>
   <thead>
     <tr>
@@ -61,6 +61,53 @@ Consider the fact table:
   </tbody>
 </table>
 </details>
+
+<!-- CREATE TABLE fact_sales (
+    sale_year INT,
+    store_name VARCHAR(20),
+    product VARCHAR(20),
+    quantity INT
+);
+
+INSERT INTO fact_sales (sale_year, store_name, product, quantity)
+VALUES
+-- Starbucks 2024
+(2024, 'Starbucks', 'Coffee',   10),
+(2024, 'Starbucks', 'Pastries', 5),
+(2024, 'Starbucks', 'Sandwich', 6),
+(2024, 'Starbucks', 'Juice',    2),
+
+-- Peets 2024
+(2024, 'Peets', 'Coffee',   3),
+(2024, 'Peets', 'Pastries', 3),
+(2024, 'Peets', 'Sandwich', 2),
+(2024, 'Peets', 'Juice',    1),
+
+-- Dunkin 2024
+(2024, 'Dunkin', 'Coffee',   8),
+(2024, 'Dunkin', 'Pastries', 6),
+(2024, 'Dunkin', 'Sandwich', 5),
+(2024, 'Dunkin', 'Juice',    3);
+
+INSERT INTO fact_sales (sale_year, store_name, product, quantity)
+VALUES
+-- Starbucks 2023
+(2023, 'Starbucks', 'Coffee',   8),
+(2023, 'Starbucks', 'Pastries', 4),
+(2023, 'Starbucks', 'Sandwich', 5),
+(2023, 'Starbucks', 'Juice',    1),
+
+-- Peets 2023
+(2023, 'Peets', 'Coffee',   2),
+(2023, 'Peets', 'Pastries', 2),
+(2023, 'Peets', 'Sandwich', 1),
+(2023, 'Peets', 'Juice',    1),
+
+-- Dunkin 2023
+(2023, 'Dunkin', 'Coffee',   6),
+(2023, 'Dunkin', 'Pastries', 5),
+(2023, 'Dunkin', 'Sandwich', 4),
+(2023, 'Dunkin', 'Juice',    2); -->
 
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary><strong>GROUP BY</strong></summary>
@@ -118,7 +165,7 @@ SELECT
     store_name,
     product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY store_name, product;
 ```
@@ -128,7 +175,7 @@ SELECT
     store_name,
     product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
   (store_name, product)--,
@@ -195,7 +242,7 @@ SELECT
     store_name,
     product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY store_name, product WITH ROLLUP;
 ```
@@ -205,7 +252,7 @@ SELECT
     store_name,
     product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
   (store_name, product),
@@ -269,7 +316,7 @@ SELECT
     store_name,
     product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY product, store_name WITH ROLLUP;
 ```
@@ -279,7 +326,7 @@ SELECT
     store_name,
     product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
   (store_name, product),
@@ -342,12 +389,12 @@ GROUP BY GROUPING SETS (
 </table>
 
 ```sql
-CREATE MATERIALIZED VIEW dbo.cube_sales AS
+CREATE MATERIALIZED VIEW cube_sales AS
 SELECT
     store_name,
     product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY CUBE (store_name, product);
 ```
@@ -355,10 +402,10 @@ GROUP BY CUBE (store_name, product);
 or 
 
 ```sql
-CREATE MATERIALIZED VIEW dbo.cube_sales AS
+CREATE MATERIALIZED VIEW cube_sales AS
 SELECT store_name, product,
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
   (store_name, product),
@@ -368,7 +415,7 @@ GROUP BY GROUPING SETS (
 );
 ```
 
-Now, we can `SUM` the total sales quantity in 2024 for coffee by querying the fact table (dbo.fact_sales) directly or **more efficiently** by querying the precomputed data cube (dbo.cube_sales).
+Now, we can `SUM` the total sales quantity in 2024 for coffee by querying the fact table (fact_sales) directly or **more efficiently** by querying the precomputed data cube (cube_sales).
 <table>
   <thead>
     <tr>
@@ -421,14 +468,14 @@ Now, we can `SUM` the total sales quantity in 2024 for coffee by querying the fa
 ```sql
 SELECT
     SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 WHERE sale_year = 2024
 AND product = 'coffee';
 ```
 or 
 ```sql
 SELECT total
-FROM dbo.cube_sales
+FROM cube_sales
 WHERE sale_year = 2024
 AND product = 'coffee';
 ```
@@ -439,15 +486,15 @@ AND product = 'coffee';
 `ROLLUP` is particularly useful when aggregating by date dimensions. If you `GROUP BY` year, then you may also want to `GROUP BY` all of the quarters of each year, and if you `GROUP BY` quarter, then you want to `GROUP BY` all of the months of each quarter. But, the groupings may not be useful in reverse order. For example, do we need to `SUM` sales in (Q1, February) across all years?
 
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
-<summary>Show dbo.fact_sales:</summary>
+<summary>Show fact_sales:</summary>
 <table>
   <thead>
     <tr>
-      <th>Year</th>
-      <th>Quarter</th>
-      <th>Month</th>
-      <th>Day</th>
-      <th>Quantity</th>
+      <th>year</th>
+      <th>quarter</th>
+      <th>month</th>
+      <th>day</th>
+      <th>quantity</th>
     </tr>
   </thead>
   <tbody>
@@ -511,6 +558,25 @@ AND product = 'coffee';
 </table>
 </details>
 
+<!-- DROP TABLE IF EXISTS fact_sales;
+CREATE TABLE fact_sales (
+    [year]     INT        NOT NULL,
+    [quarter]  CHAR(2)    NOT NULL,
+    [month]    VARCHAR(20) NOT NULL,
+    [day]      INT        NOT NULL,
+    quantity   INT        NOT NULL
+);
+INSERT INTO fact_sales ([year], [quarter], [month], [day], quantity)
+VALUES
+    (2024, 'Q1', 'January',   1,  4),
+    (2024, 'Q1', 'January',   3,  6),
+    (2024, 'Q1', 'March',     6, 10),
+    (2024, 'Q2', 'May',       5, 22),
+    (2023, 'Q1', 'January',   2, 15),
+    (2023, 'Q1', 'January',  21,  2),
+    (2023, 'Q1', 'February',  3,  5),
+    (2023, 'Q4', 'November', 17,  2); -->
+
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary><strong>GROUP BY WITH ROLLUP</strong></summary>
 
@@ -529,7 +595,7 @@ GROUP BY GROUPING SETS (
 
 ```sql
 SELECT year, quarter, month, SUM(quantity) AS total
-FROM dbo.fact_sales
+FROM fact_sales
 GROUP BY year, quarter, month WITH ROLLUP
 ORDER BY year, quarter, month
 ```
@@ -670,4 +736,5 @@ print(len(list(cube_combinations))) # == 20
 <!-- extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
 - https://stackoverflow.com/questions/37975227/what-is-the-difference-between-cube-rollup-and-groupby-operators
-- https://www.postgresql.org/docs/9.5/queries-table-expressions.html#QUERIES-GROUPING-SETS -->
+- https://www.postgresql.org/docs/9.5/queries-table-expressions.html#QUERIES-GROUPING-SETS
+- https://dbfiddle.uk/aZc_LQhv -->
