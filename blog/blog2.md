@@ -603,10 +603,10 @@ ORDER BY year, quarter, month
 <table>
   <thead>
     <tr>
-      <th>Year</th>
-      <th>Quarter</th>
-      <th>Month</th>
-      <th>Total</th>
+      <th>year</th>
+      <th>quarter</th>
+      <th>month</th>
+      <th>total</th>
     </tr>
   </thead>
   <tbody>
