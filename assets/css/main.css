@@ -2320,6 +2320,11 @@ body>article {
 
 @media screen and (max-width: 736px) {
 
+	/* matt custom -> needed to fit on small screen */
+	nav {
+		font-size: 9pt;
+	}
+
 	/* Basic */
 
 	body {
