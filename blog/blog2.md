@@ -20,7 +20,7 @@ In general, facts often have more than two dimensions (e.g. five dimensions such
 `GROUPING SETS`, `CUBE`, and `ROLLUP` are special syntax that extend the capabilities of `GROUP BY` and are often available in OLAP Database Management Systems (DBMS). It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a *data cube*.
 
 Consider the fact table:
-<details>
+<details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary>Show dbo.fact_sales</summary>
 <table>
   <thead>
@@ -62,7 +62,7 @@ Consider the fact table:
 </table>
 </details>
 
-<details>
+<details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary><strong>GROUP BY</strong></summary>
 <table>
   <thead>
@@ -139,7 +139,7 @@ GROUP BY GROUPING SETS (
 ```
 </details>
 
-<details>
+<details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary><strong>GROUP BY WITH ROLLUP</strong></summary>
 <table>
   <thead>
@@ -290,7 +290,7 @@ GROUP BY GROUPING SETS (
 ```
 </details>
 
-<details>
+<details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary><strong>GROUP BY CUBE</strong></summary>
 <table>
   <thead>
@@ -438,7 +438,7 @@ AND product = 'coffee';
 
 `ROLLUP` is particularly useful when aggregating by date dimensions. If you `GROUP BY` year, then you may also want to `GROUP BY` all of the quarters of each year, and if you `GROUP BY` quarter, then you want to `GROUP BY` all of the months of each quarter. But, the groupings may not be useful in reverse order. For example, do we need to `SUM` sales in (Q1, February) across all years?
 
-<details>
+<details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary>Show dbo.fact_sales:</summary>
 <table>
   <thead>
@@ -511,7 +511,7 @@ AND product = 'coffee';
 </table>
 </details>
 
-<details>
+<details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary><strong>GROUP BY WITH ROLLUP</strong></summary>
 
 ```sql
