@@ -368,7 +368,7 @@ GROUP BY GROUPING SETS (
 );
 ```
 
-Now, we can `SUM` the total sales quantity in 2024 for coffee by querying the fact table (dbo.fact_sales) directly or more efficiently by querying the precomputed data cube (dbo.cube_sales).
+Now, we can `SUM` the total sales quantity in 2024 for coffee by querying the fact table (dbo.fact_sales) directly or -- more efficiently -- by querying the precomputed data cube (dbo.cube_sales).
 <table>
   <thead>
     <tr>
