@@ -1,7 +1,7 @@
 <br>
 <br>
 
-Data warehouses (OLAP databases) are used for many *write-once, read-many* aggregate (`COUNT`, `SUM`, `AVG`, `MIN`, or `MAX`) workloads. But, it is wasteful to crunch through common aggregations for every user's query. Futhermore, it may not be prudent to allow all readers to spin up huge clusters to perform expensive queries. Instead, these common query results should be calculated once, persisted, and available to all readers. One way to persist the data results, which is native to the data warehouse, is with a `MATERIALIZED VIEW`. As opposed to a standard (virtual) `VIEW`, which is simply a shortcup / wrapper over a longer SQL query, a `MATERIALIZED VIEW` is an actual copy of the underlying query results, written to disk. When the underlying data changes, a materialized view needs to be refreshed.
+Data warehouses (OLAP databases) are used for many _write-once, read-many_ aggregate (`COUNT`, `SUM`, `AVG`, `MIN`, or `MAX`) workloads. But, it is wasteful to crunch through common aggregations for every user's query. Futhermore, it may not be prudent to allow all readers to spin up huge clusters to perform expensive queries. Instead, these common query results should be calculated once, persisted, and available to all readers. One way to persist the data results, which is native to the data warehouse, is with a `MATERIALIZED VIEW`. As opposed to a standard (virtual) `VIEW`, which is simply a shortcup / wrapper over a longer SQL query, a `MATERIALIZED VIEW` is an actual copy of the underlying query results, written to disk. When the underlying data changes, a materialized view needs to be refreshed.
 
 ```sql
 CREATE MATERIALIZED VIEW mv AS SELECT * FROM my_table;
@@ -15,11 +15,13 @@ A common special case of a `MATERIALIZED VIEW` is known as a **Data Cube** or **
 In general, facts often have more than two dimensions (e.g. five dimensions such as date, product, store, promotion, and customer). It’s a lot harder to imagine what a five-dimensional hypercube would look like, but the principle remains the same: each cell contains the sales for a particular date-product-store-promotion-customer combination.
 <br>
 <br>
+
 <h2> Example 1</h2>
 
-`GROUPING SETS`, `CUBE`, and `ROLLUP` are special syntax that extend the capabilities of `GROUP BY` and are often available in OLAP Database Management Systems (DBMS). It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a *data cube*.
+`GROUPING SETS`, `CUBE`, and `ROLLUP` are special syntax that extend the capabilities of `GROUP BY` and are often available in OLAP Database Management Systems (DBMS). It is best to illustrate the usefuleness of these keywords with a clear example; and, more specifically, show how `CUBE` can be used to create a _data cube_.
 
 Consider the fact table:
+
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
 <summary>Show fact_sales:</summary>
 <table>
@@ -64,12 +66,12 @@ Consider the fact table:
 
 <!-- CREATE TABLE fact_sales (
     sale_year INT,
-    store_name VARCHAR(20),
+    store VARCHAR(20),
     product VARCHAR(20),
     quantity INT
 );
 
-INSERT INTO fact_sales (sale_year, store_name, product, quantity)
+INSERT INTO fact_sales (sale_year, store, product, quantity)
 VALUES
 -- Starbucks 2024
 (2024, 'Starbucks', 'Coffee',   10),
@@ -89,7 +91,7 @@ VALUES
 (2024, 'Dunkin', 'Sandwich', 5),
 (2024, 'Dunkin', 'Juice',    3);
 
-INSERT INTO fact_sales (sale_year, store_name, product, quantity)
+INSERT INTO fact_sales (sale_year, store, product, quantity)
 VALUES
 -- Starbucks 2023
 (2023, 'Starbucks', 'Coffee',   8),
@@ -115,36 +117,36 @@ VALUES
   <thead>
     <tr>
       <th>year=2024</th>
-      <th>dunkin</th>
-      <th>peets</th>
-      <th>starbucks</th>
+      <th>Dunkin</th>
+      <th>Peets</th>
+      <th>Starbucks</th>
       <th>total</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>coffee</th>
+      <th>Coffee</th>
       <td style="background-color: yellow;">8</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">10</td>
       <td>21</td>
     </tr>
     <tr>
-      <th>juice</th>
+      <th>Juice</th>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">1</td>
       <td style="background-color: yellow;">2</td>
       <td>6</td>
     </tr>
     <tr>
-      <th>pastries</th>
+      <th>Pastries</th>
       <td style="background-color: yellow;">6</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">5</td>
       <td>14</td>
     </tr>
     <tr>
-      <th>sandwhich</th>
+      <th>Sandwich</th>
       <td style="background-color: yellow;">5</td>
       <td style="background-color: yellow;">2</td>
       <td style="background-color: yellow;">6</td>
@@ -162,66 +164,69 @@ VALUES
 
 ```sql
 SELECT
-    store_name,
+    store,
     product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
-GROUP BY store_name, product;
+GROUP BY store, product;
 ```
+
 or
+
 ```sql
 SELECT
-    store_name,
+    store,
     product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
-  (store_name, product)--,
+  (store, product)--,
   --(product),
-  --(store_name),
+  --(store),
   --()
 );
 ```
+
 </details>
 
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
-<summary><strong>GROUP BY WITH ROLLUP</strong></summary>
+<summary><strong>GROUP BY ROLLUP</strong></summary>
 <table>
   <thead>
     <tr>
       <th>year=2024</th>
-      <th>dunkin</th>
-      <th>peets</th>
-      <th>starbucks</th>
+      <th>Dunkin</th>
+      <th>Peets</th>
+      <th>Starbucks</th>
       <th>total</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>coffee</th>
+      <th>Coffee</th>
       <td style="background-color: yellow;">8</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">10</td>
       <td>21</td>
     </tr>
     <tr>
-      <th>juice</th>
+      <th>Juice</th>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">1</td>
       <td style="background-color: yellow;">2</td>
       <td>6</td>
     </tr>
     <tr>
-      <th>pastries</th>
+      <th>Pastries</th>
       <td style="background-color: yellow;">6</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">5</td>
       <td>14</td>
     </tr>
     <tr>
-      <th>sandwhich</th>
+      <th>Sandwich</th>
       <td style="background-color: yellow;">5</td>
       <td style="background-color: yellow;">2</td>
       <td style="background-color: yellow;">6</td>
@@ -239,25 +244,27 @@ GROUP BY GROUPING SETS (
 
 ```sql
 SELECT
-    store_name,
+    store,
     product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
-GROUP BY store_name, product WITH ROLLUP;
+GROUP BY ROLLUP (store, product);
 ```
+
 or
+
 ```sql
 SELECT
-    store_name,
+    store,
     product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
-  (store_name, product),
+  (store, product),
   --(product),
-  (store_name),
+  (store),
   ()
 );
 ```
@@ -266,36 +273,36 @@ GROUP BY GROUPING SETS (
   <thead>
     <tr>
       <th>year=2024</th>
-      <th>dunkin</th>
-      <th>peets</th>
-      <th>starbucks</th>
+      <th>Dunkin</th>
+      <th>Peets</th>
+      <th>Starbucks</th>
       <th>total</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>coffee</th>
+      <th>Coffee</th>
       <td style="background-color: yellow;">8</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">10</td>
       <td style="background-color: yellow;">21</td>
     </tr>
     <tr>
-      <th>juice</th>
+      <th>Juice</th>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">1</td>
       <td style="background-color: yellow;">2</td>
       <td style="background-color: yellow;">6</td>
     </tr>
     <tr>
-      <th>pastries</th>
+      <th>Pastries</th>
       <td style="background-color: yellow;">6</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">5</td>
       <td style="background-color: yellow;">14</td>
     </tr>
     <tr>
-      <th>sandwhich</th>
+      <th>Sandwich</th>
       <td style="background-color: yellow;">5</td>
       <td style="background-color: yellow;">2</td>
       <td style="background-color: yellow;">6</td>
@@ -313,28 +320,31 @@ GROUP BY GROUPING SETS (
 
 ```sql
 SELECT
-    store_name,
+    store,
     product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
-GROUP BY product, store_name WITH ROLLUP;
+GROUP BY ROLLUP (product, store);
 ```
+
 or
+
 ```sql
 SELECT
-    store_name,
+    store,
     product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
-  (store_name, product),
+  (store, product),
   (product),
-  --(store_name),
+  --(store),
   ()
 );
 ```
+
 </details>
 
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
@@ -343,36 +353,36 @@ GROUP BY GROUPING SETS (
   <thead>
     <tr>
       <th>year=2024</th>
-      <th>dunkin</th>
-      <th>peets</th>
-      <th>starbucks</th>
+      <th>Dunkin</th>
+      <th>Peets</th>
+      <th>Starbucks</th>
       <th>total</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>coffee</th>
+      <th>Coffee</th>
       <td style="background-color: yellow;">8</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">10</td>
       <td style="background-color: yellow;">21</td>
     </tr>
     <tr>
-      <th>juice</th>
+      <th>Juice</th>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">1</td>
       <td style="background-color: yellow;">2</td>
       <td style="background-color: yellow;">6</td>
     </tr>
     <tr>
-      <th>pastries</th>
+      <th>Pastries</th>
       <td style="background-color: yellow;">6</td>
       <td style="background-color: yellow;">3</td>
       <td style="background-color: yellow;">5</td>
       <td style="background-color: yellow;">14</td>
     </tr>
     <tr>
-      <th>sandwhich</th>
+      <th>Sandwich</th>
       <td style="background-color: yellow;">5</td>
       <td style="background-color: yellow;">2</td>
       <td style="background-color: yellow;">6</td>
@@ -391,65 +401,66 @@ GROUP BY GROUPING SETS (
 ```sql
 CREATE MATERIALIZED VIEW cube_sales AS
 SELECT
-    store_name,
+    store,
     product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
-GROUP BY CUBE (store_name, product);
+GROUP BY CUBE (store, product);
 ```
 
-or 
+or
 
 ```sql
 CREATE MATERIALIZED VIEW cube_sales AS
-SELECT store_name, product,
+SELECT store, product,
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
 GROUP BY GROUPING SETS (
-  (store_name, product),
+  (store, product),
   (product),
-  (store_name),
+  (store),
   ()
 );
 ```
 
-Now, we can `SUM` the total sales quantity in 2024 for coffee by querying the fact table (fact_sales) directly or **more efficiently** by querying the precomputed data cube (cube_sales).
+Now, we can `SUM` the total sales quantity in 2024 for Coffee by querying the fact table (fact_sales) directly or **more efficiently** by querying the precomputed data cube (cube_sales).
+
 <table>
   <thead>
     <tr>
       <th>year=2024</th>
-      <th>dunkin</th>
-      <th>peets</th>
-      <th>starbucks</th>
+      <th>Dunkin</th>
+      <th>Peets</th>
+      <th>Starbucks</th>
       <th>total</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>coffee</th>
+      <th>Coffee</th>
       <td>8</td>
       <td>3</td>
       <td>10</td>
       <td style="background-color: lightgreen;color: white">21</td>
     </tr>
     <tr>
-      <th>juice</th>
+      <th>Juice</th>
       <td>3</td>
       <td>1</td>
       <td>2</td>
       <td>6</td>
     </tr>
     <tr>
-      <th>pastries</th>
+      <th>Pastries</th>
       <td>6</td>
       <td>3</td>
       <td>5</td>
       <td>14</td>
     </tr>
     <tr>
-      <th>sandwhich</th>
+      <th>Sandwich</th>
       <td>5</td>
       <td>2</td>
       <td>6</td>
@@ -470,15 +481,18 @@ SELECT
     SUM(quantity) AS total
 FROM fact_sales
 WHERE sale_year = 2024
-AND product = 'coffee';
+AND product = 'Coffee';
 ```
-or 
+
+or
+
 ```sql
 SELECT total
 FROM cube_sales
 WHERE sale_year = 2024
-AND product = 'coffee';
+AND product = 'Coffee';
 ```
+
 </details>
 
 <h2> Example 2</h2>
@@ -578,12 +592,14 @@ VALUES
     (2023, 'Q4', 'November', 17,  2); -->
 
 <details style="border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px;">
-<summary><strong>GROUP BY WITH ROLLUP</strong></summary>
+<summary><strong>GROUP BY ROLLUP</strong></summary>
 
 ```sql
-GROUP BY year, quarter, month WITH ROLLUP
+GROUP BY ROLLUP (year, quarter, month)
 ```
-is equivalent to 
+
+is equivalent to
+
 ```sql
 GROUP BY GROUPING SETS (
   (year, quarter, month),
@@ -596,7 +612,7 @@ GROUP BY GROUPING SETS (
 ```sql
 SELECT year, quarter, month, SUM(quantity) AS total
 FROM fact_sales
-GROUP BY year, quarter, month WITH ROLLUP
+GROUP BY ROLLUP (year, quarter, month)
 ORDER BY year, quarter, month
 ```
 
@@ -694,14 +710,15 @@ ORDER BY year, quarter, month
 
 <h2> Performance Considerations</h2>
 
-As mentioned, materialized data cubes are important for *write-once, read-many* workloads. But, it is important for the data engineer creating and maintaing the data cube to understand its performance footprint. 
+As mentioned, materialized data cubes are important for _write-once, read-many_ workloads. But, it is important for the data engineer creating and maintaing the data cube to understand its performance footprint.
 
 The number of grouping sets in a data cube is the powerset (i.e. all possible subsets) of the dimensions in the cube.
 
 ```sql
 GROUP BY CUBE (a, b, c)
 ```
-is equivalent to 
+
+is equivalent to
 
 ```sql
 GROUP BY GROUPING SETS (
@@ -715,14 +732,15 @@ GROUP BY GROUPING SETS (
     (         )
 )
 ```
+
 2^n = The number of subsets in a powerset of n objects<br>
 2^**3** = 8
 
 However, the number of combinations of aggregations is not solely dependent on the number of dimensions of the cube. **Cardinality** of each dimension plays the dominant role. Cardinality is the uniqueness of data values in a dimension. Low cardinality means that a column has a lot of duplicate values in its set. High cardinality means that the column contains a large percentage of completely unique values. A column containing a single value will always be the lowest possible cardinality. A column containing unique IDs will always be the highest possible cardinality.
 
-`CUBE` will produce a record (i.e. aggregation) for each *combination of values* in the grouped columns. The data engineer should perform some data exploration on the underlying fact table before blindly creating a data cube. Considering each dimension in the data cube as a set of unique values, the number of records in the resulting data cube will be the cartesian product of all dimension sets (after adding a `NULL` value to each dimension set).
+`CUBE` will produce a record (i.e. aggregation) for each _combination of values_ in the grouped columns. The data engineer should perform some data exploration on the underlying fact table before blindly creating a data cube. Considering each dimension in the data cube as a set of unique values, the number of records in the resulting data cube will be the cartesian product of all dimension sets (after adding a `NULL` value to each dimension set).
 
-In the **GROUP BY CUBE** section of Example 1, we have one dimension (store) with a cardinality of 3 (dunkin, peets, starbucks) and one dimension (product) with a cardinality of 4 (coffee, juice, pastries, sandwhich). We add the `NULL` value to each dimension (to factor in subtotals) and our resultant number of records is (4 + 1)*(3 + 1) = 20 records.
+In the **GROUP BY CUBE** section of Example 1, we have one dimension (store) with a cardinality of 3 (Dunkin, Peets, Starbucks) and one dimension (product) with a cardinality of 4 (Coffee, Juice, Pastries, Sandwich). We add the `NULL` value to each dimension (to factor in subtotals) and our resultant number of records is (4 + 1)\*(3 + 1) = 20 records.
 
 ```python
 import itertools
@@ -732,6 +750,9 @@ cube_combinations = itertools.product(stores, products) # cartesian product
 print(len(list(cube_combinations))) # == 20
 # can loop through cube_combinations to calculate data cube in python
 ```
+
+<h2> Playground</h2>
+Use embedded DuckDB editor below to test out queries.
 
 <!-- extra resources:
 - https://stackoverflow.com/questions/25274879/when-to-use-grouping-sets-cube-and-rollup
