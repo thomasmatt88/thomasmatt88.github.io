@@ -37,7 +37,7 @@
                     </template> -->
                 </zero-md>
             </article>
-            <iframe id="editorIFrame" name="editorIFrameName" src="https://matthewthomas.info/duckdb-wasm-editor/" style="height:350px;width:100%"></iframe>
+            <iframe id="editorIFrame" name="editorIFrameName" src="https://matthewthomas.info/duckdb-wasm-editor/" style="height:800px;width:100%"></iframe>
         </div>
     </article>
 
@@ -77,37 +77,37 @@
 		const iframe = document.getElementById("editorIFrame");
 
 		const code = `
-        CREATE TABLE fact_sales (
-        sale_year INTEGER,
-        store VARCHAR,
-        product VARCHAR,
-        quantity INTEGER
-        );
-        INSERT INTO fact_sales (sale_year, store, product, quantity) VALUES
-        (2024, 'Starbucks', 'Coffee', 10),
-        (2024, 'Starbucks', 'Pastries', 5),
-        (2024, 'Starbucks', 'Sandwich', 6),
-        (2024, 'Starbucks', 'Juice', 2),
-        (2024, 'Peets', 'Coffee', 3),
-        (2024, 'Peets', 'Pastries', 3),
-        (2024, 'Peets', 'Sandwich', 2),
-        (2024, 'Peets', 'Juice', 1),
-        (2024, 'Dunkin', 'Coffee', 8),
-        (2024, 'Dunkin', 'Pastries', 6),
-        (2024, 'Dunkin', 'Sandwich', 5),
-        (2024, 'Dunkin', 'Juice', 3),
-        (2023, 'Starbucks', 'Coffee', 8),
-        (2023, 'Starbucks', 'Pastries', 4),
-        (2023, 'Starbucks', 'Sandwich', 5),
-        (2023, 'Starbucks', 'Juice', 1),
-        (2023, 'Peets', 'Coffee', 2),
-        (2023, 'Peets', 'Pastries', 2),
-        (2023, 'Peets', 'Sandwich', 1),
-        (2023, 'Peets', 'Juice', 1),
-        (2023, 'Dunkin', 'Coffee', 6),
-        (2023, 'Dunkin', 'Pastries', 5),
-        (2023, 'Dunkin', 'Sandwich', 4),
-        (2023, 'Dunkin', 'Juice', 2);
+CREATE TABLE fact_sales (
+    sale_year INTEGER,
+    store VARCHAR,
+    product VARCHAR,
+    quantity INTEGER
+);
+INSERT INTO fact_sales (sale_year, store, product, quantity) VALUES
+    (2024, 'Starbucks', 'Coffee', 10),
+    (2024, 'Starbucks', 'Pastries', 5),
+    (2024, 'Starbucks', 'Sandwich', 6),
+    (2024, 'Starbucks', 'Juice', 2),
+    (2024, 'Peets', 'Coffee', 3),
+    (2024, 'Peets', 'Pastries', 3),
+    (2024, 'Peets', 'Sandwich', 2),
+    (2024, 'Peets', 'Juice', 1),
+    (2024, 'Dunkin', 'Coffee', 8),
+    (2024, 'Dunkin', 'Pastries', 6),
+    (2024, 'Dunkin', 'Sandwich', 5),
+    (2024, 'Dunkin', 'Juice', 3),
+    (2023, 'Starbucks', 'Coffee', 8),
+    (2023, 'Starbucks', 'Pastries', 4),
+    (2023, 'Starbucks', 'Sandwich', 5),
+    (2023, 'Starbucks', 'Juice', 1),
+    (2023, 'Peets', 'Coffee', 2),
+    (2023, 'Peets', 'Pastries', 2),
+    (2023, 'Peets', 'Sandwich', 1),
+    (2023, 'Peets', 'Juice', 1),
+    (2023, 'Dunkin', 'Coffee', 6),
+    (2023, 'Dunkin', 'Pastries', 5),
+    (2023, 'Dunkin', 'Sandwich', 4),
+    (2023, 'Dunkin', 'Juice', 2);
 		`.trim();
 
 		// Send once iframe is loaded
