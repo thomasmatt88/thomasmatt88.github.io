@@ -15,11 +15,10 @@ A database **transaction** is a logical unit of work that contains one or more S
 
 - The whole transaction is processed or nothing is processed (i.e. revert database back to original state if transaction cannot complete).
 
-**Consistency**
+**Consistency** (i.e. “Correctness”)
 
-- “Correctness” would be a better name than “Consistency”.
 - Enforces database constraints.
-- Prevents database corruption by an illegal transaction (e.g. cannot write a string to a boolean column).
+- Prevents database corruption by an illegal transaction.
 - Consistent transaction takes database from one valid state to another valid state, enforcing all defined rules.
 
 **Isolation**
@@ -43,10 +42,10 @@ Consistency enforces constraints and constraints are defined when creating table
 
 ```sql
 CREATE TABLE users (
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) NOT NULL,
-  age INT NOT NULL,
-  UNIQUE KEY unique_email (email)
+  name VARCHAR(255) NOT NULL, /*datatype and NOT NULL constaints on 'name' column*/
+  email VARCHAR(255) NOT NULL, /*datatype and NOT NULL constaints on 'email' column*/
+  age INT NOT NULL, /*datatype and NOT NULL constaints on 'age' column*/
+  UNIQUE KEY unique_email (email) /*uniqueness constraint on 'email' column*/
 )
 ```
 
@@ -81,7 +80,7 @@ How do ACID properties apply to the simple `INSERT` statement provided?
 **Isolation** -> Any other transaction executing concurrently will not be able to read or update the three records, until the `INSERT` transaction is complete. <br>
 **Durable** -> Once the transaction completes and the client receives a success message, the client can be certain that the three records have been saved to disk. Even if the DBMS is rebooted, those three records will persist. Alternatively, if the client library receives a failure message, it can be certain that none of those three records will persist.
 
-It’s more important for data engineers to understand the consequences of ACID properties (or **lack-thereof**) on even a single `INSERT` statement. What if one needs to write data processing code on a node that cannot reliably interface with a database server? What if the node only had a file to insert data into? Even for a very basic `INSERT` statement it would require overhead application logic to ensure data integrity without passing that responsibility off to an ACID-compliant DBMS.
+It’s important for data engineers to understand the consequences of ACID properties (or **lack-thereof**) on even a single `INSERT` statement. What if one needs to write data processing code on a node that cannot reliably interface with a database server? What if the node only had a file to insert data into? Even for a very basic `INSERT` statement it would require overhead application logic to ensure data integrity without passing that responsibility off to an ACID-compliant DBMS.
 
 <h3>Example 2:</h3>
 
