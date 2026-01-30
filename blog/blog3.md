@@ -1,34 +1,35 @@
 <h2>Motivation</h2>
-Teachings on ACID transactions generally focus on the application developer’s perspective. The canonical examples of ACID transactions in any beginner level education material often include banking or e-commerce use cases. Furthermore, application developers almost exclusively interface with Online Transaction Processing (OLTP) databases and, therefore, can take ACID-compliance for granted. Educational material is usually surface level as a result.
+
+Teachings on ACID transactions generally focus on the application developer’s perspective. The canonical examples of ACID transactions in any beginner level education material often include banking or e-commerce use cases. Furthermore, application developers almost exclusively interface with Online **Transaction** Processing (OLTP) databases and, therefore, can take ACID-compliance for granted. Educational material is usually surface level as a result.
 <br>
 <br>
 ACID transactions are foundational to data integrity. However, they slow down the process of reading and writing data, and add complexity to the underlying data management system. As a result, data engineers often interface with systems that relax ACID constraints in order to boost performance, scale, and flexibility. Meanwhile, the same distributed systems that help scale data also lead to higher likelihood of component failures that could compromise data integrity. Therefore, data engineers should have an advanced understanding of ACID transactions in order to scale pipelines while ensuring data integrity.
 
 <h2>Overview</h2>
 
-A database transaction is a logical unit of work that contains one or more SQL statements.
+A database **transaction** is a logical unit of work that contains one or more SQL statements.
 
-ACID (Atomicity, Consistency, Isolation, Durability) properties of database transactions guarantee validity of data, even in the event of errors / failures while the transaction runs, and after it completes.
+**ACID (Atomicity, Consistency, Isolation, Durability) properties** of database transactions guarantee validity of data, even in the event of errors / failures while the transaction runs, and after it completes.
 
-Atomicity
+**Atomicity**
 
 - The whole transaction is processed or nothing is processed (i.e. revert database back to original state if transaction cannot complete).
 
-Consistency
+**Consistency**
 
 - “Correctness” would be a better name than “Consistency”.
 - Enforces database constraints.
 - Prevents database corruption by an illegal transaction (e.g. cannot write a string to a boolean column).
 - Consistent transaction takes database from one valid state to another valid state, enforcing all defined rules.
 
-Isolation
+**Isolation**
 
 - Multiple transactions can execute concurrently and safely.
 - Isolation ensures that concurrent execution of transactions leaves the database in the same state that would have been obtained if the transactions were executed sequentially.
 - The intermediate states between the steps of a transaction are not visible to other concurrent transactions.
 - All changes within a transaction become visible simultaneously.
 
-Durability
+**Durability**
 
 - Transactions are saved to non-volatile memory.
 - Guarantees that once a transaction is completed and acknowledged by DBMS, it has indeed been permanently recorded and won’t be lost even if a crash ensues shortly after.
@@ -49,7 +50,7 @@ CREATE TABLE users (
 )
 ```
 
-Contrary to many online examples, an ACID transaction can be a single SQL statement.
+Contrary to many online examples, an ACID transaction can be a **single** SQL statement.
 
 ```sql
 INSERT INTO users (name, email, age)
@@ -73,45 +74,45 @@ COMMIT;
 
 How do ACID properties apply to the simple INSERT statement provided?
 
-Atomicity -> Either all three records (Alice / Bob / Carol) will be inserted or none of them will be inserted.
-Consistency -> All constraints must be satisfied in order for the transaction to complete. E.g. ‘alice@gmail.com’ must be unique to users table and therefore cannot already exist in users table in order for the transaction to complete.
-Isolation -> Any other transaction executing concurrently will not be able to read or update the three records, until the INSERT transaction is complete.
-Durable -> Once the transaction completes and the client receives a success message, the client can be certain that the three records have been saved to disk. Even if the DBMS is rebooted, those three records will persist. Alternatively, if the client library receives a failure message, it can be certain that none of those three records will persist.
+**Atomicity** -> Either all three records (Alice / Bob / Carol) will be inserted or none of them will be inserted. <br>
+**Consistency** -> All constraints must be satisfied in order for the transaction to complete. E.g. "alice@gmail.com" must be unique to users table and therefore cannot already exist in users table in order for the transaction to complete. <br>
+**Isolation** -> Any other transaction executing concurrently will not be able to read or update the three records, until the `INSERT` transaction is complete. <br>
+**Durable** -> Once the transaction completes and the client receives a success message, the client can be certain that the three records have been saved to disk. Even if the DBMS is rebooted, those three records will persist. Alternatively, if the client library receives a failure message, it can be certain that none of those three records will persist.
 
-It’s more important for data engineers to understand the consequences of ACID properties (or lack-thereof) on even a single INSERT statement. What if one needs to write data processing code on a node that cannot reliably interface with a database server? What if the node only had a file to insert data into? Even for a very basic INSERT statement it would require overhead application logic to ensure data integrity without passing that responsibility off to an ACID-compliant DBMS.
+It’s more important for data engineers to understand the consequences of ACID properties (or **lack-thereof**) on even a single `INSERT` statement. What if one needs to write data processing code on a node that cannot reliably interface with a database server? What if the node only had a file to insert data into? Even for a very basic `INSERT` statement it would require overhead application logic to ensure data integrity without passing that responsibility off to an ACID-compliant DBMS.
 
 <h3>Example 2:</h3>
 
 ```sql
 CREATE TABLE users (
-name VARCHAR(255) NOT NULL,
-email VARCHAR(255) NOT NULL,
-age INT NOT NULL,
-UNIQUE KEY unique_email (email)
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  age INT NOT NULL,
+  UNIQUE KEY unique_email (email)
 );
 CREATE TABLE fact_sales (
-sale_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-user_email VARCHAR(255) NOT NULL,
-product_id INT NOT NULL,
-quantity_purchased INT UNSIGNED NOT NULL,
-date DATE NOT NULL,
+  sale_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_email VARCHAR(255) NOT NULL,
+  product_id INT NOT NULL,
+  quantity_purchased INT UNSIGNED NOT NULL,
+  date DATE NOT NULL,
 
-CONSTRAINT fk_fact_sales_user
-FOREIGN KEY (user_email)
-REFERENCES users(email)
+  CONSTRAINT fk_fact_sales_user
+  FOREIGN KEY (user_email)
+  REFERENCES users(email)
 );
 ```
 
-Multiple SQL statements executed as a single transaction is called a transaction block.
+Multiple SQL statements executed as a single transaction is called a **transaction block**.
 
 ```sql
 START TRANSACTION;
 INSERT INTO users (name, email, age)
 VALUES
-(‘David’, ‘david@example.com', 35);
+  ("David", "david@example.com", 35);
 INSERT INTO fact_sales (user_email, product_id, quantity_purchased, date)
 VALUES
-(‘david@example.com', 5, 7, 20260101);
+  ("david@example.com", 5, 7, 20260101);
 COMMIT;
 ```
 
@@ -119,22 +120,21 @@ Now, imagine an analyst is trying to track the average number of purchases of a 
 
 ```sql
 SELECT
-COALESCE(SUM(fs.quantity_purchased), 0) / COUNT(u.email) AS avg_quantity_product_5_per_user
+  COALESCE(SUM(fs.quantity_purchased), 0) / COUNT(u.email) AS avg_quantity_product_5_per_user
 FROM users u
 LEFT JOIN fact_sales fs
-ON u.email = fs.user_email
-AND fs.product_id = 5;
+ON u.email = fs.user_email AND fs.product_id = 5;
 ```
 
 ACID properties of the transaction block above ensure that the analyst will calculate a valid average at a particular point-in-time (either before the INSERT transaction block started or after it completed/failed).
 
 It’s important to note that ACID compliance is a spectrum and many analytical systems do not support the full range of ACID properties that application developers may be used to. In order to support a Star and Snowflake data model, for example, an analytical system must support multi-statement and multi-table ACID transactions, such as the one included in this example.
 
-————————————————————————————————————————
+---
 
 ACID constraints are often relaxed, especially by big data systems, in order to boost performance, scale, and flexibility.
 
-Isolation, for example, is enforced through pessimistic concurrency control (i.e. locking of select database objects when in use) or through optimistic concurrency control (execute transactions as if there was no contention and only rollback one or more transactions if there was a conflict detected). It should be clear that forgoing Isolation property of a transaction would dramatically increase concurrency. Apache Cassandra is an example of a DBMS that provides no isolation guarantee (beyond a single row), allowing for massive scale in concurrent writes. Lack of strict isolation still makes Cassandra useful for many applications such as storing large amounts of chat messages.
+Isolation, for example, is enforced through **pessimistic concurrency control** (i.e. locking of select database objects when in use) or through **optimistic concurrency control** (execute transactions as if there was no contention and only rollback one or more transactions if there was a conflict detected). It should be clear that forgoing Isolation property of a transaction would dramatically increase concurrency. Apache Cassandra is an example of a DBMS that provides no isolation guarantee (beyond a single row), allowing for massive scale in concurrent writes. Lack of strict isolation still makes Cassandra useful for many applications such as storing large amounts of chat messages.
 
 Non-volatile storage is slower to read/write to than volatile storage. In-memory databases, such as Redis, can drop durability guarantees and greatly reduce IO latency of queries.
 
@@ -148,24 +148,19 @@ A Data Warehouse is built on top of one or more DBMSs that enforce ACID transact
 
 A Data Lake architecture has many benefits but it pushes many of the responsibilities of ensuring data integrity onto the data engineer. It becomes important for the data engineer to understand some of the primitives of the distributed file system, as a database developer would need to understand when building a database on top of these primitives.
 
-Example 3:
+<h3>Example 3:</h3>
 
 An essential workflow in a data pipeline is for one step (Step A) to write data in the form of multiple files to a prefix and for a downstream step (Step B) to read and further process that data — only after the first step is complete.
 
-Step A -> /2026-01-01/… -> Step B
-writes latest /2026-01-02/… reads and further processes latest
-(e.g. 2026-01-03) /2026-01-03/… (e.g. 2026-01-03)
+![Figure 3](figure3.png)
 
-One common way I see this handled is to have Step A write an empty **DONE** (or **SUCCESS**) file as its final step in processing data. Step B can watch for the presence of **DONE** file before proceeding with downstream processing. Because Amazon s3 is a distributed and eventually consistent (with exceptions) filesystem, there is actually no guarantee that Step B will read the **DONE** file strictly after all files in its prefix are available to it. Furthermore, there is no guarantee that Step B will comprehensively LIST all files written by Step A (unknown unknown). Therefore, there is a non-zero chance that Step B may process incomplete data; although I have never observed this happen before in pipelines where workers and data exist in the same AWS region.
+One common way I see this handled is to have Step A write an empty `__DONE__` (or `__SUCCESS__`) file as its final step in processing data. Step B can watch for the presence of `__DONE__` file before proceeding with downstream processing. Because Amazon s3 is a distributed and eventually consistent (with exceptions) filesystem, there is actually no guarantee that Step B will read the `__DONE__` file strictly after all files in its prefix are available to it. Furthermore, there is no guarantee that Step B will comprehensively LIST all files written by Step A (unknown unknown). Therefore, there is a non-zero chance that Step B may process incomplete data; although I have never observed this happen before in pipelines where workers and data exist in the same AWS region.
 
-AWS S3’s strong read-after-write consistency is an exception to its predominant eventually consistent behavior. “If a PUT request is successful, your data is safely stored. Any read (GET or LIST request) that is initiated following the receipt of a successful PUT response will return the data written by the PUT request.” Therefore, if Step A and Step B are executed by the same process then Step B can be guaranteed to read all of Step A’s writes (i.e. read complete data); but, Step A and Step B are often executed by different workers spun up concurrently.
+AWS S3’s strong read-after-write consistency is an exception to its predominant eventually consistent behavior. [“If a PUT request is successful, your data is safely stored. Any read (GET or LIST request) that is initiated following the receipt of a successful PUT response will return the data written by the PUT request.”](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html#ConsistencyModel) Therefore, if Step A and Step B are executed by the same process then Step B can be guaranteed to read all of Step A’s writes (i.e. read complete data); but, Step A and Step B are often executed by different workers spun up concurrently.
 
-If data completeness is of paramount importance then it can be achieved with a **MANIFEST** file. Instead of simply signaling to Step B that Step A is complete with an empty **DONE** file, a **MANIFEST** file can both signal to Step B that Step A is complete and list all files it must read in the prefix. Updates to single keys in S3 are atomic. Therefore, there is zero chance of Step B reading a partially written **MANIFEST** file and thus reading a partial list of files it must consume. Logic can be written in Step B (such as retries) to handle cases where a file name listed in **MANIFEST** is not yet available for it to read.
+If data completeness is of paramount importance then it can be achieved with a `__MANIFEST__` file. Instead of simply signaling to Step B that Step A is complete with an empty `__DONE__` file, a `__MANIFEST__` file can both signal to Step B that Step A is complete and list all files it must read in the prefix. Updates to single keys in S3 are atomic. Therefore, there is zero chance of Step B reading a partially written `__MANIFEST__` file and thus reading a partial list of files it must consume. Logic can be written in Step B (such as retries) to handle cases where a file name listed in `__MANIFEST__` is not yet available for it to read.
 
-https://stackoverflow.com/questions/3184886/does-amazon-s3-guarantee-write-ordering
-https://arpitbhayani.me/blogs/read-your-write-consistency/
-
-Example 4:
+<h3>Example 4:</h3>
 
 Write-once and read-many workloads are extremely common in OLAP. Write operations can be very lengthy for big tables, on the order of minutes and even hours. It would be very painful to interrupt readers for the entire duration of writes. How can we ensure read concurrency and atomic writes in a Data Lake? One must maintain two or more versions of the table at a time. Readers can consume an old version of a table while a new version is being written in isolation.
 
