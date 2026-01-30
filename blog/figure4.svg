@@ -1,0 +1,56 @@
+<svg width="900" height="360" viewBox="0 0 900 360"
+     xmlns="http://www.w3.org/2000/svg"
+     font-family="Arial, Helvetica, sans-serif">
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10"
+            refX="9" refY="3"
+            orient="auto"
+            markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- Catalog Pointer -->
+  <rect x="60" y="140" rx="12" ry="12" width="220" height="80"
+        fill="#f5f5f5" stroke="#333" stroke-width="2"/>
+  <text x="170" y="175" text-anchor="middle" font-size="16" font-weight="bold">
+    table_x
+  </text>
+  <text x="170" y="195" text-anchor="middle" font-size="12" fill="#555">
+    catalog pointer
+  </text>
+
+  <!-- Blue table -->
+  <rect x="500" y="70" rx="12" ry="12" width="330" height="90"
+        fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="665" y="115" text-anchor="middle" font-size="14" fill="#1e40af">
+    s://bucket-name/prefix-name/table_x_a
+  </text>
+
+  <!-- Green table -->
+  <rect x="500" y="210" rx="12" ry="12" width="330" height="90"
+        fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="665" y="255" text-anchor="middle" font-size="14" fill="#166534">
+    s://bucket-name/prefix-name/table_x_b
+  </text>
+
+  <!-- Active arrow -->
+  <line x1="280" y1="180" x2="500" y2="115"
+        stroke="#2563eb" stroke-width="3"
+        marker-end="url(#arrow)"/>
+  <text x="390" y="130" font-size="12" fill="#2563eb">
+    active
+  </text>
+
+  <!-- Standby arrow -->
+  <line x1="280" y1="180" x2="500" y2="255"
+        stroke="#999" stroke-width="2"
+        stroke-dasharray="6,6"
+        marker-end="url(#arrow)"/>
+  <text x="385" y="255" font-size="12" fill="#777">
+    standby
+  </text>
+
+</svg>
