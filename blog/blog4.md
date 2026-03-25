@@ -8,6 +8,12 @@
 Point-in-time is valuable for auditing/compliance, reproduceability (did results change due to change in methodology or change in data?), and in order to eliminate look-ahead bias when modelling and performing backtesting. It is critically important when evaluating a trading strategy on historical data that your strategy does not incorporate data that would not actually have been available at the point-in-time a trade is simulated.<br>
 <br>
 
+["Importance of Point-in-Time for Alternative Data"](https://www.eaglealpha.com/2024/05/06/point-in-time-alternative-data/) by Mikheil Shengelia does a very thorough job of expanding on the importance of point-in-time data in finance. Some select quotes from the blog include:
+
+- "PIT data, marked with the date of a company’s disclosure, preserves the accuracy of historical data by avoiding biases from subsequent revisions. Conversely, non-PIT data often replaces original figures due to updates or errors and is usually marked by the fiscal period’s end."
+- "The 5 scenarios in which PIT data is crucial for investors highlighted in our recent report are 1) CEO change announcements over various stage, 2) M&A-related data at various stages of the M&A cycle, 3) Clinical trials and FDA approval, 4) Earnings release dates and updates (by companies and by data vendors, and 5) Fiscal period end dates."
+- "[S&P Capital IQ](https://www.spglobal.com/content/dam/spglobal/mi/en/documents/general/sp-capitaliq-quantamental-point-in-time-vs-lagged-fundamentals.pdf) notes that while time lags can be applied to non-PIT data to reduce biases, this can lead to inconsistencies due to varying filing times and regulations globally. Their research highlights the challenges in using time lags to simulate PIT data, emphasizing the complexities of accurately representing financials as they were known at the original reporting time."
+
 <h2>Methodologies</h2>
 
 <h4>Historical Snapshots vs. Type 2 SCD</h4>
