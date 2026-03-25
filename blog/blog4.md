@@ -8,28 +8,6 @@
 Point-in-time is valuable for auditing/compliance, reproduceability (did results change due to change in methodology or change in data?), and in order to eliminate look-ahead bias when modelling and performing backtesting. It is critically important when evaluating a trading strategy on historical data that your strategy does not incorporate data that would not actually have been available at the point-in-time a trade is simulated.<br>
 <br>
 
-<h2>Methodologies</h2>
-
-<h4>Historical Snapshots vs. Type 2 SCD</h4>
-<br>
-The naive method to provide point-in-time data is to simply snapshot the dataset everytime a change is made. This would not be practical for a transactional table where small changes are made frequently. For a data warehouse, it would be suboptimal.
-<br>
-<br>
-The optimized method is to adopt a Type 2 SCD data model. Slowly Changing Dimensions (SCD) are a data warehousing technique introduced by Ralph Kimball. The technique derives its name from its original application to the Dimension tables in a Star or Snowflake Schema. Type 2 SCD is the commonly used variation of the technique that preserves the full history of values of a dimension table.
-<br>
-<br>
-
-Ironically, I would not recommend SCD modelling for its original application of Dimension tables. In ["Functional Data Engineering -- a modern paradigm for batch data processing"](https://maximebeauchemin.medium.com/functional-data-engineering-a-modern-paradigm-for-batch-data-processing-2327ec32c42a), Maxime Beauchemin advocates against using SCD modeling because the headache of using it in his opinion (and mutating data) is not worth the reduction in storage size because storage is cheap. He recommends dimension snapshots (the naive method). Maxime's experienced viewpoint is correct for many applications. However, there are applications where the dataset is so large that snapshotting the dataset frequently is cost-prohibitive. Storage is cheap, but not free. In finance, I have encountered many snapshotted timeseries datasets of hundreds of terabytes in size. Switching to Type 2 SCD model compressed the datasets by orders of magnitude. Besides reduction in storage size, Type 2 SCD has other benefits. For example, when iterating through a "point-in-time" dataset during backtesting, static records (records that do not change across versions) do not need to be reloaded into memory.
-<br>
-<br>
-Type 2 SCD modelling provides efficiency at the expense of complexity in many operations including:
-
-- upserting data
-- querying data
-- joining data
-
-It is important when adopting this model that it is standardized across your department so that common utilities can be written to hide this complexity to both maintainers and end-users of the point-in-time dataset.
-
 <h2>Example Point-in-Time Timeseries Dataset </h2>
 
 Recording timeseries data point-in-time can be tricky to wrap one's head around. Timeseries signals have an `event_datetime` attribute. This attribute is part of the record (i.e. raw data) itself and to be differentiated from point-in-time metadata such as `record_datetime`, `commit_datetime`, `record_from`, and `record_to`.
@@ -41,7 +19,7 @@ Recording timeseries data point-in-time can be tricky to wrap one's head around.
 - As of 2001-04-10, we had complete company revenue data for 2001 Q1
 
 <br>
-If this dataset was stored under the hood in Historical Snapshot form it would look as such:
+If this dataset was stored under the hood in Historical Snapshot (further explained in subsequent sections) form it would look as such:
 <br>
 <br>
 
@@ -72,6 +50,66 @@ If this dataset was stored under the hood in Historical Snapshot form it would l
     <tr style="color: blue;"><td>1.5</td><td>2001-06-30</td><td>2001-04-10</td></tr>
   </tbody>
 </table>
+
+A non-PIT dataset would simply include only the latest/current view, as such:
+
+<table>
+  <thead>
+    <tr>
+      <th>company_revenue</th>
+      <th>event_datetime</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="color: blue;"><td>1</td><td>2000-03-31</td></tr>
+    <tr style="color: blue;"><td>2</td><td>2000-06-30</td></tr>
+    <tr style="color: blue;"><td>2.7</td><td>2000-09-30</td></tr>
+    <tr style="color: blue;"><td>8.05</td><td>2000-12-31</td></tr>
+    <tr style="color: blue;"><td>9</td><td>2001-03-31</td></tr>
+    <tr style="color: blue;"><td>1.5</td><td>2001-06-30</td></tr>
+  </tbody>
+</table>
+
+<h2>Importance of Point-in-Time for Alternative Data</h2>
+
+["Importance of Point-in-Time for Alternative Data"](https://www.eaglealpha.com/2024/05/06/point-in-time-alternative-data/) by Mikheil Shengelia does a very thorough job of explaining the importance of point-in-time data in finance. Some select quotes from the blog include:
+
+- "PIT data, marked with the date of a company’s disclosure, preserves the accuracy of historical data by avoiding biases from subsequent revisions. Conversely, non-PIT data often replaces original figures due to updates or errors and is usually marked by the fiscal period’s end."
+- "The 5 scenarios in which PIT data is crucial for investors highlighted in our recent report are 1) CEO change announcements over various stage, 2) M&A-related data at various stages of the M&A cycle, 3) Clinical trials and FDA approval, 4) Earnings release dates and updates (by companies and by data vendors, and 5) Fiscal period end dates."
+- "[S&P Capital IQ](https://www.spglobal.com/content/dam/spglobal/mi/en/documents/general/sp-capitaliq-quantamental-point-in-time-vs-lagged-fundamentals.pdf) notes that while time lags can be applied to non-PIT data to reduce biases, this can lead to inconsistencies due to varying filing times and regulations globally. Their research highlights the challenges in using time lags to simulate PIT data, emphasizing the complexities of accurately representing financials as they were known at the original reporting time."
+
+A key part of an financial analyst's job is performing intra-quarter analysis. If they want to use alternative data to estimate quarterly fundamentals (e.g. profit, revenue, etc.), before quarter-end, they will necessarily have to deal with incomplete data.
+
+Introducing more terminology:
+
+**fill delay:** number of days between the date of a data point generated, e.g. transaction happened, and the date of the data record delivered
+<br>
+
+**fill rate:** percentage of data filled for a period at a certain time
+
+Estimating quarter-end KPI requires calculating fill rate at the given time the estimate is made. [S&P Capital IQ](https://www.spglobal.com/content/dam/spglobal/mi/en/documents/general/sp-capitaliq-quantamental-point-in-time-vs-lagged-fundamentals.pdf) details the issues of doing so without point-in-time data.
+
+<h2>Methodologies</h2>
+
+<h4>Historical Snapshots vs. Type 2 SCD</h4>
+<br>
+The naive method to provide point-in-time data is to simply snapshot the dataset everytime a change is made. This would not be practical for a transactional table where small changes are made frequently. For a data warehouse, it would be suboptimal.
+<br>
+<br>
+The optimized method is to adopt a Type 2 SCD data model. Slowly Changing Dimensions (SCD) are a data warehousing technique introduced by Ralph Kimball. The technique derives its name from its original application to the Dimension tables in a Star or Snowflake Schema. Type 2 SCD is the commonly used variation of the technique that preserves the full history of values of a dimension table.
+<br>
+<br>
+
+Ironically, I would not recommend SCD modelling for its original application of Dimension tables. In ["Functional Data Engineering -- a modern paradigm for batch data processing"](https://maximebeauchemin.medium.com/functional-data-engineering-a-modern-paradigm-for-batch-data-processing-2327ec32c42a), Maxime Beauchemin advocates against using SCD modeling because the headache of using it in his opinion (and mutating data) is not worth the reduction in storage size because storage is cheap. He recommends dimension snapshots (the naive method). Maxime's experienced viewpoint is correct for many applications. However, there are applications where the dataset is so large that snapshotting the dataset frequently is cost-prohibitive. Storage is cheap, but not free. In finance, I have encountered many snapshotted timeseries datasets of hundreds of terabytes in size. Switching to Type 2 SCD model compressed the datasets by orders of magnitude. Besides reduction in storage size, Type 2 SCD has other benefits. For example, when iterating through a "point-in-time" dataset during backtesting, static records (records that do not change across versions) do not need to be reloaded into memory.
+<br>
+<br>
+Type 2 SCD modelling provides efficiency at the expense of complexity in many operations including:
+
+- upserting data
+- querying data
+- joining data
+
+It is important when adopting this model that it is standardized across your department so that common utilities can be written to hide this complexity to both maintainers and end-users of the point-in-time dataset.
 
 <h2>Deeper Dive</h2>
 
