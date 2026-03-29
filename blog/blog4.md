@@ -14,6 +14,7 @@
     - [Parse NetChanges for 'Updates' given 'Primary Key'](#parse-netchanges-for-updates-given-primary-key)
     - [Query Type2 SCD for any new value(s) for a particular dimension](#query-type2-scd-for-any-new-values-for-a-particular-dimension)
     - [Join multiple Type2SCD tables into a single unified Type2SCD](#join-multiple-type2scd-tables-into-a-single-unified-type2scd)
+    - [Upsert latest/current version into Type2SCD](#upsert-latestcurrent-version-into-type2scd)
 
 ## Overview
 
@@ -600,3 +601,68 @@ ORDER BY PK, record_from, record_to, dim1, dim2, dim3
 ```
 
 More info: https://infinitelambda.com/multitable-scd2-joins/
+
+#### Merge latest/current version into Type2SCD:
+
+- latest record(s) match previous record(s) (i.e. Table Version 4 record(s) match Table Version 3 record(s)) -> do nothing
+- latest record(s) not in previous record set -> insert latest record(s) with new `record_from`
+- previous record(s) not in latest record set -> soft delete previous record(s) (update `record_to`)
+
+<h4>Table Version 4 (Latest)</h4>
+<table>
+  <thead>
+    <tr>
+      <th>column_x</th>
+      <th>column_y</th>
+      <th>record_datetime</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="color: black;">
+      <td>a</td>
+      <td>8</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: green;">
+      <td>b</td>
+      <td>1</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: brown;">
+      <td>e</td>
+      <td>9</td>
+      <td>2000-01-10</td>
+    </tr>
+  </tbody>
+</table>
+
+It is critical to perform merge inside of a transaction block to protect integrity of Type2SCD table.
+
+```sql
+START TRANSACTION;
+
+SET @run_date = '2000-01-10'; -- can use system datetime or query from Latest
+
+-- 1. Soft delete (invalidate previous record(s) not in Latest)
+UPDATE Type2SCD t
+LEFT JOIN Latest l
+  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y)
+SET t.record_to = @run_date
+WHERE t.record_to = '9999-12-31' AND (l.column_x IS NULL AND l.column_y IS NULL);
+
+-- 2. Insert new or changed record(s)
+INSERT INTO Type2SCD (column_x, column_y, record_from, record_to)
+SELECT l.column_x, l.column_y, l.record_datetime, '9999-12-31'
+FROM Latest l
+LEFT JOIN Type2SCD t
+  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y)
+ AND t.record_to = '9999-12-31'
+WHERE (t.column_x IS NULL AND t.column_y IS NULL);;
+
+COMMIT;
+```
