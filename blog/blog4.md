@@ -648,6 +648,9 @@ START TRANSACTION;
 
 SET @run_date = '2000-01-10'; -- can use system datetime or query from Latest
 
+-- should have guard rail to make sure run_date >= MAX(Type2SCD.record_from)
+-- if run_date == MAX(Type2SCD.record_from) (i.e. retry) then skip merge
+
 -- 1. Soft delete (invalidate previous record(s) not in Latest)
 UPDATE Type2SCD t
 LEFT JOIN Latest l
