@@ -14,7 +14,7 @@
     - [Parse NetChanges for 'Updates' given 'Primary Key'](#parse-netchanges-for-updates-given-primary-key)
     - [Query Type2 SCD for any new value(s) for a particular dimension](#query-type2-scd-for-any-new-values-for-a-particular-dimension)
     - [Join multiple Type2SCD tables into a single unified Type2SCD](#join-multiple-type2scd-tables-into-a-single-unified-type2scd)
-    - [Upsert latest/current version into Type2SCD](#upsert-latestcurrent-version-into-type2scd)
+    - [Merge latest/current version into Type2SCD](#merge-latestcurrent-version-into-type2scd)
 
 ## Overview
 
@@ -651,18 +651,98 @@ SET @run_date = '2000-01-10'; -- can use system datetime or query from Latest
 -- 1. Soft delete (invalidate previous record(s) not in Latest)
 UPDATE Type2SCD t
 LEFT JOIN Latest l
-  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y)
+  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y) -- NULL-safe equality is critical
 SET t.record_to = @run_date
 WHERE t.record_to = '9999-12-31' AND (l.column_x IS NULL AND l.column_y IS NULL);
 
 -- 2. Insert new or changed record(s)
 INSERT INTO Type2SCD (column_x, column_y, record_from, record_to)
-SELECT l.column_x, l.column_y, l.record_datetime, '9999-12-31'
+SELECT l.column_x, l.column_y, @run_date, '9999-12-31'
 FROM Latest l
 LEFT JOIN Type2SCD t
-  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y)
+  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y) -- NULL-safe equality is critical
  AND t.record_to = '9999-12-31'
 WHERE (t.column_x IS NULL AND t.column_y IS NULL);;
 
 COMMIT;
 ```
+
+<h4>Type2SCD (after Latest merge)</h4>
+<table>
+  <thead>
+    <tr>
+      <th>column_x</th>
+      <th>column_y</th>
+      <th>record_from</th>
+      <th>record_to</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="color: gray;">
+      <td>a</td>
+      <td>1</td>
+      <td>2000-01-01</td>
+      <td>2000-01-02</td>
+    </tr>
+    <tr style="color: gray;">
+      <td>a</td>
+      <td>1</td>
+      <td>2000-01-07</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: red;">
+      <td>a</td>
+      <td>0</td>
+      <td>2000-01-02</td>
+      <td>2000-01-07</td>
+    </tr>
+    <tr style="color: black;">
+      <td>a</td>
+      <td>8</td>
+      <td>2000-01-10</td>
+      <td>9999-12-31</td>
+    </tr>
+    <tr style="color: green;">
+      <td>b</td>
+      <td>1</td>
+      <td>2000-01-01</td>
+      <td>9999-12-31</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-01</td>
+      <td>2000-01-02</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-05</td>
+      <td>2000-01-07</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-10</td>
+      <td>9999-12-31</td>
+    </tr>
+    <tr style="color: orange;">
+      <td>c</td>
+      <td>3</td>
+      <td>2000-01-05</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: purple;">
+      <td>d</td>
+      <td>2</td>
+      <td>2000-01-02</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: brown;">
+      <td>e</td>
+      <td>9</td>
+      <td>2000-01-10</td>
+      <td>9999-12-31</td>
+    </tr>
+  </tbody>
+</table>
