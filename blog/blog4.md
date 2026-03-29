@@ -1,4 +1,23 @@
-<h2>Overview</h2>
+## Table of Contents
+
+- [Overview](#overview)
+- [Example Point-in-Time Timeseries Dataset](#example-point-in-time-timeseries-dataset)
+- [Importance of Point-in-Time for Alternative Data](#importance-of-point-in-time-for-alternative-data)
+- [Methodoligies](#methodologies)
+- [Deeper Dive](#deeper-dive)
+  - [Hist Snapshots](#histsnapshots)
+  - [Type 2 SCD](#type2scd)
+    - [Data model](#data-model)
+    - [Query Type2 SCD for view of dataset at point in time T](#query-type2-scd-for-view-of-dataset-at-point-in-time-t)
+    - [Query Type2 SCD for latest/current view of dataset](#query-type2-scd-for-latestcurrent-view-of-dataset)
+    - [Query Type2 SCD for changes between two points in time (T1 and T2)](#query-type2-scd-for-changes-between-two-points-in-time-t1-and-t2)
+    - [Parse NetChanges for 'Updates' given 'Primary Key'](#parse-netchanges-for-updates-given-primary-key)
+    - [Query Type2 SCD for any new value(s) for a particular dimension](#query-type2-scd-for-any-new-values-for-a-particular-dimension)
+    - [Join multiple Type2SCD tables into a single unified Type2SCD](#join-multiple-type2scd-tables-into-a-single-unified-type2scd)
+    - [Merge latest/current version into Type2SCD](#merge-latestcurrent-version-into-type2scd)
+
+## Overview
+
 "Point-in-time" is a property of a dataset that describes its preservation of historical states, providing the ability to query the past and retreive data "as of" a certain date and time. <br>
 
 - When (YYYY-MM-DDThh:mm:ss) was information known/recorded? <br>
@@ -8,7 +27,7 @@
 Point-in-time is valuable for auditing/compliance, reproduceability (did results change due to change in methodology or change in data?), and in order to eliminate look-ahead bias when modelling and performing backtesting. It is critically important when evaluating a trading strategy on historical data that your strategy does not incorporate data that would not actually have been available at the point-in-time a trade is simulated.<br>
 <br>
 
-<h2>Example Point-in-Time Timeseries Dataset </h2>
+## Example Point-in-Time Timeseries Dataset
 
 Recording timeseries data point-in-time can be tricky to wrap one's head around. Timeseries signals have an `event_datetime` attribute. This attribute is part of the record (i.e. raw data) itself and to be differentiated from point-in-time metadata such as `record_datetime`, `commit_datetime`, `record_from`, and `record_to`.
 
@@ -70,7 +89,7 @@ A non-PIT dataset would simply include only the latest/current view, as such:
   </tbody>
 </table>
 
-<h2>Importance of Point-in-Time for Alternative Data</h2>
+## Importance of Point-in-Time for Alternative Data
 
 ["Importance of Point-in-Time for Alternative Data"](https://www.eaglealpha.com/2024/05/06/point-in-time-alternative-data/) by Mikheil Shengelia does a very thorough job of explaining the importance of point-in-time data in finance. Some select quotes from the blog include:
 
@@ -89,9 +108,10 @@ Introducing more terminology:
 
 Estimating quarter-end KPI requires calculating fill rate at the given time the estimate is made. [S&P Capital IQ](https://www.spglobal.com/content/dam/spglobal/mi/en/documents/general/sp-capitaliq-quantamental-point-in-time-vs-lagged-fundamentals.pdf) details the issues of doing so without point-in-time data.
 
-<h2>Methodologies</h2>
+## Methodologies
 
-<h4>Historical Snapshots vs. Type 2 SCD</h4>
+#### Historical Snapshots vs. Type 2 SCD
+
 <br>
 The naive method to provide point-in-time data is to simply snapshot the dataset everytime a change is made. This would not be practical for a transactional table where small changes are made frequently. For a data warehouse, it would be suboptimal.
 <br>
@@ -111,11 +131,11 @@ Type 2 SCD modelling provides efficiency at the expense of complexity in many op
 
 It is important when adopting this model that it is standardized across your department so that common utilities can be written to hide this complexity to both maintainers and end-users of the point-in-time dataset.
 
-<h2>Deeper Dive</h2>
+## Deeper Dive
 
 For a deeper dive on important Type 2 SCD modelling and behavior, a simplified dataset is used. Metadata values provided are in date format, however, queries would function identically with datetime formatted values.
 
-<h3>HistSnapshots</h3>
+### HistSnapshots
 
 <h4>Table Version 0</h4>
 <table>
@@ -265,7 +285,8 @@ INSERT INTO HistSnapshots(column_x, column_y, record_datetime, version) VALUES
 ('d', 2, '2000-01-07', 3);
 ```
 
-<h3>Type2SCD</h3>
+### Type2SCD
+
 <table>
   <thead>
     <tr>
@@ -347,7 +368,7 @@ INSERT INTO Type2SCD (column_x, column_y, record_from, record_to) VALUES
 ('d', 2, '2000-01-02', '9999-12-31');
 ```
 
-Data model:
+#### Data model:
 
 - `record_from` is the datetime at which record was observed in dataset.
 - `record_to` is the datetime at which record was deleted from dataset (rather then the datetime at which record was last observed in dataset). <br>
@@ -365,7 +386,7 @@ More info: https://stackoverflow.com/questions/20005950/best-practice-for-scd-da
   - If a columnn is added to underlying dataset then a column should be added to the Type2SCD. The Type2SCD should backfill `NULL` in the added column for all records that were recorded before the column was added.
   - If a colummn is removed from the underlying dataset then that column will still persist in Type2SCD. The Type2SCD should fill `NULL` in removed column for all records that are recorded going forward.
 
-Query Type2 SCD for view of dataset at point in time T:
+#### Query Type2 SCD for view of dataset at point in time T:
 
 ```sql
 SELECT *
@@ -374,18 +395,18 @@ WHERE
 record_from <= @T AND record_to > @T
 ```
 
-Query Type2 SCD for latest/current view of dataset:
+#### Query Type2 SCD for latest/current view of dataset:
 
 ```sql
 SELECT *
 FROM Type2SCD
 WHERE
-record_to = '9999-12-31'
+record_to = '9999-12-31' //'9999-12-31T23:59:59z' if using date and time
 ```
 
 - additional Boolean column named `is_latest` or `is_valid` is common in practice but is purely for convenience and provides no additional information.
 
-Query Type2 SCD for changes between two points in time (T1 and T2):
+#### Query Type2 SCD for changes between two points in time (T1 and T2):
 
 ```sql
 WITH CTE_after AS (
@@ -422,7 +443,7 @@ WITH CTE_after AS (
 FROM NetChanges
 ```
 
-Parse NetChanges for 'Updates' given 'Primary Key':
+#### Parse NetChanges for 'Updates' given 'Primary Key':
 
 ```sql
 -- Query assumes guardrails in place to ensure column_x is valid Primary Key (i.e. unique to underlying table)
@@ -446,7 +467,7 @@ FROM NetChanges
 FROM CTE
 ```
 
-Query Type2 SCD for any new value(s) for a particular dimension:
+#### Query Type2 SCD for any new value(s) for a particular dimension:
 
 - e.g. any new drugs added or removed in the latest version of claims dataset?
 - e.g. any new customers added or removed in the latest version of sales dataset?
@@ -482,7 +503,7 @@ SELECT column_x, 'Deleted' AS status
 FROM NetDeletions
 ```
 
-Join multiple Type2SCD tables into a single unified Type2SCD:
+#### Join multiple Type2SCD tables into a single unified Type2SCD:
 
 ```sql
 -- Drop and recreate scd2_table1
@@ -580,3 +601,148 @@ ORDER BY PK, record_from, record_to, dim1, dim2, dim3
 ```
 
 More info: https://infinitelambda.com/multitable-scd2-joins/
+
+#### Merge latest/current version into Type2SCD:
+
+- latest record(s) match previous record(s) (i.e. Table Version 4 record(s) match Table Version 3 record(s)) -> do nothing
+- latest record(s) not in previous record set -> insert latest record(s) with new `record_from`
+- previous record(s) not in latest record set -> soft delete previous record(s) (update `record_to`)
+
+<h4>Table Version 4 (Latest)</h4>
+<table>
+  <thead>
+    <tr>
+      <th>column_x</th>
+      <th>column_y</th>
+      <th>record_datetime</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="color: black;">
+      <td>a</td>
+      <td>8</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: green;">
+      <td>b</td>
+      <td>1</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: brown;">
+      <td>e</td>
+      <td>9</td>
+      <td>2000-01-10</td>
+    </tr>
+  </tbody>
+</table>
+
+It is critical to perform merge inside of a transaction block to protect integrity of Type2SCD table.
+
+```sql
+START TRANSACTION;
+
+SET @run_date = '2000-01-10'; -- can use system datetime or query from Latest
+
+-- 1. Soft delete (invalidate previous record(s) not in Latest)
+UPDATE Type2SCD t
+LEFT JOIN Latest l
+  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y) -- NULL-safe equality is critical
+SET t.record_to = @run_date
+WHERE t.record_to = '9999-12-31' AND (l.column_x IS NULL AND l.column_y IS NULL);
+
+-- 2. Insert new or changed record(s)
+INSERT INTO Type2SCD (column_x, column_y, record_from, record_to)
+SELECT l.column_x, l.column_y, @run_date, '9999-12-31'
+FROM Latest l
+LEFT JOIN Type2SCD t
+  ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y) -- NULL-safe equality is critical
+ AND t.record_to = '9999-12-31'
+WHERE (t.column_x IS NULL AND t.column_y IS NULL);
+
+COMMIT;
+```
+
+<h4>Type2SCD (after Latest merge)</h4>
+<table>
+  <thead>
+    <tr>
+      <th>column_x</th>
+      <th>column_y</th>
+      <th>record_from</th>
+      <th>record_to</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="color: gray;">
+      <td>a</td>
+      <td>1</td>
+      <td>2000-01-01</td>
+      <td>2000-01-02</td>
+    </tr>
+    <tr style="color: gray;">
+      <td>a</td>
+      <td>1</td>
+      <td>2000-01-07</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: red;">
+      <td>a</td>
+      <td>0</td>
+      <td>2000-01-02</td>
+      <td>2000-01-07</td>
+    </tr>
+    <tr style="color: black;">
+      <td>a</td>
+      <td>8</td>
+      <td>2000-01-10</td>
+      <td>9999-12-31</td>
+    </tr>
+    <tr style="color: green;">
+      <td>b</td>
+      <td>1</td>
+      <td>2000-01-01</td>
+      <td>9999-12-31</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-01</td>
+      <td>2000-01-02</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-05</td>
+      <td>2000-01-07</td>
+    </tr>
+    <tr style="color: blue;">
+      <td>c</td>
+      <td>NULL</td>
+      <td>2000-01-10</td>
+      <td>9999-12-31</td>
+    </tr>
+    <tr style="color: orange;">
+      <td>c</td>
+      <td>3</td>
+      <td>2000-01-05</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: purple;">
+      <td>d</td>
+      <td>2</td>
+      <td>2000-01-02</td>
+      <td>2000-01-10</td>
+    </tr>
+    <tr style="color: brown;">
+      <td>e</td>
+      <td>9</td>
+      <td>2000-01-10</td>
+      <td>9999-12-31</td>
+    </tr>
+  </tbody>
+</table>
