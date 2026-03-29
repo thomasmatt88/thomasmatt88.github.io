@@ -662,7 +662,7 @@ FROM Latest l
 LEFT JOIN Type2SCD t
   ON (t.column_x <=> l.column_x AND t.column_y <=> l.column_y) -- NULL-safe equality is critical
  AND t.record_to = '9999-12-31'
-WHERE (t.column_x IS NULL AND t.column_y IS NULL);;
+WHERE (t.column_x IS NULL AND t.column_y IS NULL);
 
 COMMIT;
 ```
