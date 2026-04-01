@@ -15,6 +15,7 @@
     - [Query Type2 SCD for any new value(s) for a particular dimension](#query-type2-scd-for-any-new-values-for-a-particular-dimension)
     - [Join multiple Type2SCD tables into a single unified Type2SCD](#join-multiple-type2scd-tables-into-a-single-unified-type2scd)
     - [Merge latest/current version into Type2SCD](#merge-latestcurrent-version-into-type2scd)
+    - [Revert Type2SCD](#revert-type2scd)
 
 ## Overview
 
@@ -749,3 +750,22 @@ COMMIT;
     </tr>
   </tbody>
 </table>
+
+#### Revert Type2SCD:
+
+This operation should be discouraged. It may compromise reproduceability downstream. However, this operation may be useful, especially if latest version(s) written to Type2SCD were mistakes and haven't been delivered downstream yet. If strict immutability is required for auditing/compliance consider Change Data Capture model instead of Type2SCD.
+
+```sql
+START TRANSACTION;
+
+SET @revert_date = '2000-01-07';
+
+DELETE FROM Type2SCD
+WHERE record_from > @revert_date;
+
+UPDATE Type2SCD
+SET record_to = '9999-12-31'
+WHERE record_to > @revert_date;
+
+COMMIT;
+```
