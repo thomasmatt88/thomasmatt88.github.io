@@ -42,9 +42,9 @@ Consistency enforces constraints and constraints are defined when creating table
 
 ```sql
 CREATE TABLE users (
-  name VARCHAR(255) NOT NULL, /*datatype and NOT NULL constaints on 'name' column*/
-  email VARCHAR(255) NOT NULL, /*datatype and NOT NULL constaints on 'email' column*/
-  age INT NOT NULL, /*datatype and NOT NULL constaints on 'age' column*/
+  name VARCHAR(255) NOT NULL, /*datatype and NOT NULL constraints on 'name' column*/
+  email VARCHAR(255) NOT NULL, /*datatype and NOT NULL constraints on 'email' column*/
+  age INT NOT NULL, /*datatype and NOT NULL constraints on 'age' column*/
   UNIQUE KEY unique_email (email) /*uniqueness constraint on 'email' column*/
 )
 ```
